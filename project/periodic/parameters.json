@@ -1,0 +1,15 @@
+{
+  "project": "periodic",
+  "phases": [{ "name": "periodic", "given_total_times": 400 }],
+  "with_boundary": false,
+  "threads": 1,
+  "given_time_interval_per_step": 0.002,
+  "step_interval_for_output": 1000,
+  "area_fraction": 0.3,
+  "length_of_rods": 3.0,
+  "diameter_of_segments": 1.0,
+  "number_of_rods": 100,
+  "self_propelling_force": 1.0,
+  "viscosity": 1.0,
+  "interaction_strength": 250
+}
