@@ -1,14 +1,19 @@
+cmake_minimum_required(VERSION 3.14)
 project(dummy NONE)
 if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
     set(CMAKE_CXX_COMPILER g++-13)
 endif()
-cmake_minimum_required(VERSION 3.14)
 project(periodic CXX)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
+
+set(Torch_DIR "../../libtorch/share/cmake/Torch")
+find_package(Torch REQUIRED)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TORCH_CXX_FLAGS}")
 
 include(FetchContent)
 
@@ -38,14 +43,20 @@ add_executable(periodic main.cpp)
 target_include_directories(periodic PRIVATE
     ${INCLUDE_DIR}
 )
+
 target_sources(periodic PRIVATE
     ${SOURCE_DIR}/Periodic.cpp
     ${SOURCE_DIR}/Rods.cpp
     ${SOURCE_DIR}/ParametersForRods.cpp
     ${SOURCE_DIR}/ForcesOnSegments2d.cpp
     ${SOURCE_DIR}/util.cpp
+    ${SOURCE_DIR}/RLAgent.cpp
 )
 
 target_compile_options(periodic PRIVATE -O3 -Wall -Wextra -Wno-psabi)
-target_link_libraries(periodic PRIVATE nlohmann_json::nlohmann_json)
+
+# target_link_libraries(periodic PRIVATE nlohmann_json::nlohmann_json)
+# target_link_libraries(periodic "${TORCH_LIBRARIES}")
+
+target_link_libraries(periodic PRIVATE nlohmann_json::nlohmann_json ${TORCH_LIBRARIES})
 target_compile_features(periodic PRIVATE cxx_std_20)

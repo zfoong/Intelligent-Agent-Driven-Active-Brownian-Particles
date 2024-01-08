@@ -10,7 +10,7 @@ simulation_phases = params["phases"]
 with_boundary = params["with_boundary"]
 step_interval_for_output = params["step_interval_for_output"]
 
-phase_index = 3
+phase_index = 0
 simulation_phase = simulation_phases[phase_index]
 total_steps = simulation_phase["total_steps"]
 steps_digits = len(str(total_steps))

@@ -37,5 +37,7 @@ public:
     void calcRodRodVicsekForcesWithPeriodic(const Rods& rods, double min_x, double max_x, double min_y, double max_y);
     void calcRodRodPolarSinusoidalForces(const Rods& rods);
     void calcRodRodPolarSinusoidalForcesWithPeriodic(const Rods& rods, double min_x, double max_x, double min_y, double max_y);
+    void calcRLAgentArtificialForces(const Rods& rods, std::vector<double> actions);
+    void calcRLAgentArtificialForcesWithPeriodic(const Rods& rods, std::vector<double> actions, double min_x, double max_x, double min_y, double max_y);
     void ClearCalculatedForces();
 };

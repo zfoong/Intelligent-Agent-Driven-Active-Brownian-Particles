@@ -54,3 +54,15 @@ public:
     void ConvertTimeScale(double scalar);
     void DisplayParameters() const;
 };
+
+class ParametersForIntelligentActiveRods : public ParametersForRods
+{
+public:
+    double active_force;
+    double self_propelling_velocity;
+
+    ParametersForIntelligentActiveRods(ParametersForRods parameter, double active_force);
+    ParametersForIntelligentActiveRods(json parameter_json);
+    void ConvertTimeScale(double scalar);
+    void DisplayParameters() const;
+};

@@ -244,6 +244,22 @@ void ForcesOnSegments2d::calcRodRodPolarSinusoidalForcesWithPeriodic(const Rods&
     }
 }
 
+void ForcesOnSegments2d::calcRLAgentArtificialForces(const Rods& rods, std::vector<double> actions)
+{
+    for (size_t rod_i = 0; rod_i < rod_torque.size(); rod_i++) {
+        double polar_torque = - std::sin(rods.getAngle(rod_i) - actions.at(rod_i));
+        rod_torque.at(rod_i) += interaction_strength * 0.1 * polar_torque;
+    }
+}
+
+void ForcesOnSegments2d::calcRLAgentArtificialForcesWithPeriodic(const Rods& rods, std::vector<double> actions, double min_x, double max_x, double min_y, double max_y)
+{
+    for (size_t rod_i = 0; rod_i < rod_torque.size(); rod_i++) {
+        double polar_torque = - std::sin(rods.getAngle(rod_i) - actions.at(rod_i));
+        rod_torque.at(rod_i) += interaction_strength * 0.1 * polar_torque;
+    }
+}
+
 void ForcesOnSegments2d::ClearCalculatedForces()
 {
     for (size_t rod_i = 0; rod_i < rod_force_x.size(); rod_i++) {

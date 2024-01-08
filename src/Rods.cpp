@@ -6,6 +6,7 @@
 #include <utility>
 #include <cmath>
 #include <random>
+#include <vector>
 #include "Rods.hpp"
 #include "util.hpp"
 
@@ -44,6 +45,10 @@ Rods::Rods(ParametersForRods parameter) : parameter(parameter)
 }
 
 ActiveRods::ActiveRods(ParametersForActiveRods parameter) : Rods(parameter), parameter(parameter)
+{
+}
+
+IntelligentActiveRods::IntelligentActiveRods(ParametersForIntelligentActiveRods parameter) : Rods(parameter), parameter(parameter)
 {
 }
 
@@ -239,6 +244,53 @@ std::pair<double, double> Rods::getOrientation(int rod_i) const
     return {cos.at(rod_i), sin.at(rod_i)};
 }
 
+double Rods::getAngleDifferenceWithinRange(int rod_i, double range_n) const
+{
+    double total_angle_difference = 0.0;
+    int xg_size = static_cast<int>(xg.size());
+    int count = 0;
+
+    for (int rod_j = 0; rod_j < xg_size; rod_j++) {
+        if (rod_j == rod_i) continue; // Skip the same rod
+
+        double distance = sqrt(pow(xg[rod_i] - xg[rod_j], 2) + pow(yg[rod_i] - yg[rod_j], 2));
+
+        if (distance <= range_n) {
+            total_angle_difference += AngleDifference(rod_i, rod_j);
+            count++;
+        }
+    }
+
+    // Handle the case where no neighboring rods are found within the range
+    if (count == 0) return 0.0;
+
+    return total_angle_difference / count;
+}
+
+std::vector<double> Rods::getAllAngleDifferenceWithinRange(double range_n) const
+{
+    std::vector<double> allAngleDiff;
+
+    for (size_t rod_i = 0; rod_i < xg.size(); rod_i++) {
+        double angleDiff = getAngleDifferenceWithinRange(rod_i, range_n);
+        allAngleDiff.push_back(angleDiff);
+    }
+
+    return allAngleDiff;
+}
+
+
+double Rods::AngleDifference(int rod_i, int rod_j) const
+{
+    double rad_i = M_PI + theta.at(rod_i);
+    double rad_j = M_PI + theta.at(rod_j);
+    double d = fmodf(abs(rad_i - rad_j), (double)M_PI*2);
+    double r = d > M_PI ? M_PI*2 - d : d;
+    if ((rad_i - rad_j >= 0 && rad_i - rad_j <= M_PI) || (rad_i - rad_j <= -M_PI && rad_i - rad_j >= -M_PI*2)) 
+        return r;
+    return -r;
+}
+
 void Rods::writeData(std::string root_directory_of_data, std::string phase_name, int steps, int total_steps_digits) const
 {
     std::ostringstream filename_number;
@@ -335,4 +387,123 @@ void Rods::writeRodsSegmentsData(std::string filename) const
     }
 
     fclose(fp);
+}
+
+// Calculate active work done by an individual rod
+double Rods::getActiveWorkByRod(int rod_i, double timeStep) 
+{
+
+    double displacement_x = this->vx.at(rod_i) * timeStep;
+    double displacement_y = this->vy.at(rod_i) * timeStep;
+
+    return this->force_x.at(rod_i) * displacement_x + this->force_y.at(rod_i) * displacement_y;
+}
+
+// Calculate active work done by an individual rod
+double Rods::getActiveWorkByRodWithinRange(size_t rod_i, double timeStep, double range_n) 
+{
+    double avg_active_work = 0.0;
+    int count = 0;
+
+    for (size_t rod_j = 0; rod_j < xg.size(); rod_j++) {
+        // if (rod_j == rod_i) continue; // Skip the same rod
+
+        double distance = sqrt(pow(xg[rod_i] - xg[rod_j], 2) + pow(yg[rod_i] - yg[rod_j], 2));
+
+        if (distance <= range_n) {
+            avg_active_work += getActiveWorkByRod(rod_j, timeStep);
+            count++;
+        }
+    }
+
+    // Handle the case where no neighboring rods are found within the range
+    // Probably will not enter such case
+    // if (count == 0) return 0.0;
+
+    return avg_active_work / count;
+}
+
+// Calculate active work done by an individual rod
+std::vector<double> Rods::getAllActiveWorkByRodWithinRange(double timeStep, double range_n) 
+{
+    std::vector<double> local_active_work;
+    for (size_t rod_i = 0; rod_i < xg.size(); rod_i++) {
+        double aw = getActiveWorkByRodWithinRange(rod_i, timeStep, range_n);
+        local_active_work.push_back(aw);
+    }
+    return local_active_work;
+}
+
+// Calculate total active work done by all rods
+double Rods::getTotalActiveWork(double timeStep) 
+{
+    double totalWork = 0.0;
+
+    for (size_t i = 0; i < xg.size(); ++i) {
+        totalWork += this->getActiveWorkByRod(i, timeStep);
+    }
+
+    // Not sure if we want to get the average or the total active work
+    return totalWork/xg.size();
+}
+
+// Helper function to check intersection between a ray and a rod segment/ and obstacle in the future
+bool Rods::isIntersecting(double ray_x1, double ray_y1, double ray_x2, double ray_y2,
+                    double segment_x, double segment_y, double segment_diameter) {
+    // Calculate the closest point on the ray to the segment center
+    double dx = ray_x2 - ray_x1;
+    double dy = ray_y2 - ray_y1;
+    double t = ((segment_x - ray_x1) * dx + (segment_y - ray_y1) * dy) / (dx * dx + dy * dy);
+    double closest_x = ray_x1 + t * dx;
+    double closest_y = ray_y1 + t * dy;
+
+    // Check if this point is within the segment diameter
+    double distance_to_segment = std::hypot(segment_x - closest_x, segment_y - closest_y);
+    return distance_to_segment <= segment_diameter / 2.0;
+}
+
+// Get the 1D vision array of a rod
+std::vector<double> Rods::get1DVisionArray(int rod_i, double r_v, int ray_count) {
+    std::vector<double> vision_array(ray_count, 0.0);
+
+    double x_pos = this->xg.at(rod_i);
+    double y_pos = this->yg.at(rod_i);
+    double rod_orientation = this->theta.at(rod_i);
+
+    for (int i = 0; i < ray_count; ++i) {
+        //Calculate ray direction based on rod orientation
+        double ray_angle = rod_orientation + M_PI * (i - ray_count/2) / ray_count/2;
+        double ray_dx = r_v * std::cos(ray_angle);
+        double ray_dy = r_v * std::sin(ray_angle);
+
+        for (size_t j = 0; j < xg.size(); ++j) {
+            if (j == rod_i) continue; // Skip the same rod
+
+            for (size_t segment = 0; segment < this->segment_x.at(j).size(); ++segment) {
+                // Check if the ray intersects with segment of rod j
+                if (isIntersecting(x_pos, y_pos, x_pos + ray_dx, y_pos + ray_dy,
+                                   this->segment_x.at(j).at(segment),
+                                   this->segment_y.at(j).at(segment),
+                                   this->parameter.diameter_of_segment)) {
+                    double distance_to_rod = std::hypot(this->segment_x.at(j).at(segment) - x_pos,
+                                                        this->segment_y.at(j).at(segment) - y_pos);
+                    double vision_value = 1.0 - distance_to_rod / r_v;
+                    vision_array[i] = std::max(vision_array[i], vision_value); // Take the maximum value in case of multiple intersections
+                    break; // Stop checking other segments of this rod if an intersection is found
+                }
+            }
+        }
+    }
+
+    return vision_array;
+}
+
+// Get the 1D vision array of a rod
+std::vector<std::vector<double>> Rods::getAll1DVisionArray(double r_v, int ray_count) {
+    std::vector<std::vector<double>> all_vision_array;
+    for (size_t rod_i = 0; rod_i < xg.size(); rod_i++) {
+        std::vector<double> va = get1DVisionArray(rod_i, r_v, ray_count);
+        all_vision_array.push_back(va);
+    }
+    return all_vision_array;
 }

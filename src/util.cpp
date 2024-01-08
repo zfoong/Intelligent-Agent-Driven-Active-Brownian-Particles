@@ -4,6 +4,8 @@
 #include <string>
 #include <nlohmann/json.hpp>
 #include "util.hpp"
+#include <torch/torch.h>
+#include <vector>
 
 using json = nlohmann::json;
 
@@ -37,4 +39,25 @@ void WriteParametersJson(std::string dirname, std::string filename, json paramet
     std::string fullpath_filename = dirname + filename;
     std::ofstream parameter_output(fullpath_filename);
     parameter_output << std::setw(2) << parameter_json << std::endl;
+}
+
+torch::Tensor vector2DToTensor(const std::vector<std::vector<double>>& vec) {
+    // Calculate the total size of the 2D vector
+    int total_size = 0;
+    for (const auto& subVec : vec) {
+        total_size += subVec.size();
+    }
+
+    // Flatten the 2D vector into a 1D vector
+    std::vector<double> flattened(total_size);
+    int index = 0;
+    for (const auto& subVec : vec) {
+        std::copy(subVec.begin(), subVec.end(), flattened.begin() + index);
+        index += subVec.size();
+    }
+
+    // Convert the 1D vector to a torch::Tensor
+    torch::Tensor tensor = torch::from_blob(flattened.data(), {static_cast<long>(vec.size()), static_cast<long>(vec[0].size())}, torch::kDouble);
+
+    return tensor.clone(); // Return a clone of the tensor to make it own its memory
 }
