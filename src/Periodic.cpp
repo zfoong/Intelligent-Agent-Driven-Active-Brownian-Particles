@@ -1,5 +1,6 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
+#include <cmath>
 
 #include "Periodic.hpp"
 #include "Rods.hpp"
@@ -32,13 +33,6 @@ void Periodic::Run(json parameter_json, int phase_index, std::string root_direct
     const double y_min = phase_parameter_json["y_min"].template get<double>();
     const double y_max = phase_parameter_json["y_max"].template get<double>();
 
-    parameter_json["time_scaled_interaction_strength"]
-        = parameter_json["interaction_strength"].template get<double>() / parameter.num_of_segments / parameter.num_of_segments
-        * time_scale * time_scale; // interaction potential coefficient scaled by time interval per time step in simulation
-    ForcesOnSegments2d rod_rod_forces(parameter, parameter_json["time_scaled_interaction_strength"].template get<double>());
-    // ForcesOnSegments2d rod_rod_vicsek_forces(parameter, parameter_json["time_scaled_interaction_strength"].template get<double>());
-    ForcesOnSegments2d rod_rod_rl_agent_forces(parameter, parameter_json["time_scaled_interaction_strength"].template get<double>());
-
     // RL parameters
     int update_freq = parameter_json["update_freq"].template get<int>();                     // perform backprop in every n time step
     int save_model_freq = parameter_json["save_model_freq"].template get<int>();             // save model in every n time step
@@ -56,6 +50,17 @@ void Periodic::Run(json parameter_json, int phase_index, std::string root_direct
     double intelligent_rods_ratio = parameter_json["intelligent_rods_ratio"].template get<double>(); // ratio of intelligent rods
     double vision_ray_count = 8;
     double r_v = 5;
+
+    const int num_of_intelligent_rods = static_cast<int>(parameter.num_of_rods * intelligent_rods_ratio);
+    const int num_of_vicsek_rods = parameter.num_of_rods - num_of_intelligent_rods;
+
+    parameter_json["time_scaled_interaction_strength"]
+    = parameter_json["interaction_strength"].template get<double>() / parameter.num_of_segments / parameter.num_of_segments
+    * time_scale * time_scale; // interaction potential coefficient scaled by time interval per time step in simulation
+    ForcesOnSegments2d rod_rod_forces(parameter, parameter_json["time_scaled_interaction_strength"].template get<double>());
+    // ForcesOnSegments2d rod_rod_vicsek_forces(parameter, parameter_json["time_scaled_interaction_strength"].template get<double>());
+    ForcesOnSegments2d rod_rod_rl_agent_forces(parameter, parameter_json["time_scaled_interaction_strength"].template get<double>());
+
     
     // Initialize RL agent
     RLAgent rl_agent(vision_ray_count, 1, lr_actor, lr_critic, gamma, K_epochs, eps_clip, action_std);
@@ -82,12 +87,18 @@ void Periodic::Run(json parameter_json, int phase_index, std::string root_direct
         // auto [fx_rod_rod_vicsek, fy_rod_rod_vicsek, torque_rod_rod_vicsek] = rod_rod_vicsek_forces.getForcesOnRods2d();
         // rod_rod_vicsek_forces.ClearCalculatedForces();
         // rods.addForces(fx_rod_rod_vicsek, fy_rod_rod_vicsek, torque_rod_rod_vicsek);
+        // for(int rod_index = 0; rod_index < num_of_intelligent_rods; rod_index++){
+        //    rods.addForceToRod(rod_index, fx_rod_rod_vicsek[rod_index], fy_rod_rod_vicsek[rod_index], torque_rod_rod_vicsek[rod_index]);
+        // }
 
         // RL: Apply artificial force to the intelligent active rods
         rod_rod_rl_agent_forces.calcRLAgentArtificialForcesWithPeriodic(rods, actions, x_min, x_max, y_min, y_max);
         auto [fx_rod_rod_rl_agent, fy_rod_rod_rl_agent, torque_rod_rod_rl_agent] = rod_rod_rl_agent_forces.getForcesOnRods2d();
         rod_rod_rl_agent_forces.ClearCalculatedForces();
-        rods.addForces(fx_rod_rod_rl_agent, fy_rod_rod_rl_agent, torque_rod_rod_rl_agent);
+        // rods.addForces(fx_rod_rod_rl_agent, fy_rod_rod_rl_agent, torque_rod_rod_rl_agent);
+        for(int rod_index = num_of_vicsek_rods; rod_index < parameter.num_of_rods; rod_index++){
+            rods.addForceToRod(rod_index, fx_rod_rod_rl_agent[rod_index], fy_rod_rod_rl_agent[rod_index], torque_rod_rod_rl_agent[rod_index]);
+        }
 
         rods.calcVelocitiesFromForces();
 
@@ -106,6 +117,10 @@ void Periodic::Run(json parameter_json, int phase_index, std::string root_direct
         // RL: Get new state and calculate reward
         std::vector<std::vector<double>> new_state = rods.getAll1DVisionArray(r_v, vision_ray_count);
         std::vector<double> reward = rods.getAllActiveWorkByRodWithinRange(reward_accum_delta, range_neighbor);
+
+        if ((total_steps >= 10) && (steps % (total_steps / 10) == 0)) {  // show reward
+            std::cout << "Current Reward is " << reward << std::endl;
+        }
         
         // RL: insert to buffer
         // buffer insert reward and is_terminate

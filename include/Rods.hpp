@@ -23,7 +23,7 @@ protected:
     std::vector<double> force_x, force_y;   // forces on center of mass
     std::vector<double> torque;             // torque around z-axis through center of mass
 
-
+    std::vector<int> type;               // type of rods
     /* parameters of rods */
     const ParametersForRods parameter;
 
@@ -33,6 +33,7 @@ public:
     double initializeRodsOnSquareLattice();
     void calcSegmentsConformation();
     void addForces(std::vector<double> force_x, std::vector<double> force_y, std::vector<double> torque);
+    void addForceToRod(int rodIndex, double fx, double fy, double torque);
     void addForcesFromForcesOnSegments(std::vector<std::vector<double>> fx, std::vector<std::vector<double>> fy);
     void calcVelocitiesFromForces();
     void updateRods();

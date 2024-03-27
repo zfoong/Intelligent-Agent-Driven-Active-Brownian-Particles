@@ -18,6 +18,7 @@ public:
     double fluidity_parallel;
     double fluidity_vertical;
     double fluidity_rotation;
+    double intelligent_rods_ratio;
 
     ParametersForRods();
     ParametersForRods(
@@ -25,13 +26,15 @@ public:
         double diameter_of_segment,
         double viscosity,
         int num_of_rods,
-        int num_of_segments
+        int num_of_segments,
+        double intelligent_rods_ratio
     );
     ParametersForRods(
         double length,
         double diameter_of_segment,
         double viscosity,
-        int num_of_rods
+        int num_of_rods,
+        double intelligent_rods_ratio
     );
     ParametersForRods(json parameter_json);
     ~ParametersForRods();

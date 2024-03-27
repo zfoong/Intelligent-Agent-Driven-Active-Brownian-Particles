@@ -15,7 +15,13 @@ Rods::Rods(ParametersForRods parameter) : parameter(parameter)
     double num_of_rods = parameter.num_of_rods;
     double num_of_segments = parameter.num_of_segments;
 
+    int num_of_intelligent_rods = static_cast<int>(num_of_rods * parameter.intelligent_rods_ratio);
+    int num_of_vicsek_rods = num_of_rods - num_of_intelligent_rods;
+
     std::cout << num_of_rods << " Rods are created" << std::endl;
+    std::cout << "Number of intelligent rods: " << num_of_intelligent_rods << std::endl;
+    std::cout << "Number of Vicsek rods: " << num_of_vicsek_rods << std::endl;
+
     xg.resize(num_of_rods);
     yg.resize(num_of_rods);
     theta.resize(num_of_rods);
@@ -42,6 +48,15 @@ Rods::Rods(ParametersForRods parameter) : parameter(parameter)
     force_x.resize(num_of_rods);
     force_y.resize(num_of_rods);
     torque.resize(num_of_rods);
+    type.resize(num_of_rods);
+
+    for (int i = 0; i < num_of_rods; ++i) {
+        if (i < num_of_vicsek_rods) {
+            type[i] = 0; // Vicsek rods
+        } else {
+            type[i] = 1; // Intelligent rods
+        }
+    }
 }
 
 ActiveRods::ActiveRods(ParametersForActiveRods parameter) : Rods(parameter), parameter(parameter)
@@ -102,6 +117,16 @@ void Rods::addForces(std::vector<double> force_x, std::vector<double> force_y, s
             this->force_y.at(rod_i) += force_y.at(rod_i);
             this->torque .at(rod_i) += torque .at(rod_i);
         }
+}
+
+void Rods::addForceToRod(int rodIndex, double fx, double fy, double torque) {
+    if (rodIndex >= 0 && rodIndex < xg.size()) { 
+        this->force_x.at(rodIndex) += fx;
+        this->force_y.at(rodIndex) += fy;
+        this->torque.at(rodIndex) += torque;
+    } else {
+        std::cerr << "Error: Attempt to add force to a rod with invalid index " << rodIndex << std::endl;
+    }
 }
 
 void Rods::addForcesFromForcesOnSegments(std::vector<std::vector<double>> fx, std::vector<std::vector<double>> fy)
@@ -356,10 +381,10 @@ void Rods::writeRodsData(std::string filename) const
         }
 
         // label x y cosx siny theta
-        fprintf(fp, "%4d %7.2f %7.2f %6.2f %6.2f %5.2f %10f %10f %10f %10f %10f\n",
+        fprintf(fp, "%4d %7.2f %7.2f %6.2f %6.2f %5.2f %10f %10f %10f %10f %10f %4d\n",
             (int)i,
             initial_point_x , initial_point_y, length_x, length_y, theta_pi_period,
-            xg.at(i), yg.at(i), vx.at(i), vy.at(i), omega.at(i)
+            xg.at(i), yg.at(i), vx.at(i), vy.at(i), omega.at(i), type.at(i)
         );
     }
 
@@ -379,9 +404,9 @@ void Rods::writeRodsSegmentsData(std::string filename) const
         }
 
         for (size_t j = 0; j < segment_x.at(i).size(); j++) {
-            fprintf(fp, "%4d %2d %7.2f %7.2f %.2f %5.2f\n",
+            fprintf(fp, "%4d %2d %7.2f %7.2f %.2f %5.2f %4d\n",
                 (int)i, (int)j,
-                segment_x.at(i).at(j), segment_y.at(i).at(j), parameter.diameter_of_segment / 2.0, theta_pi_period
+                segment_x.at(i).at(j), segment_y.at(i).at(j), parameter.diameter_of_segment / 2.0, theta_pi_period, type.at(i)
             );
         }
     }

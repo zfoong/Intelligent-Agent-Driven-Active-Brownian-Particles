@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.14)
+set(CMAKE_CUDA_COMPILER "/usr/local/cuda-12.4/bin/nvcc")
 project(dummy NONE)
 if(CMAKE_SYSTEM_NAME MATCHES "Darwin")
     set(CMAKE_CXX_COMPILER g++-13)

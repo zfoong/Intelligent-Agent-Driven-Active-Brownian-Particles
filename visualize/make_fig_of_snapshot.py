@@ -129,11 +129,22 @@ def with_head(
 
     # fc = face color, ec = edge color
     for index, row in df.iterrows():
+        rod_type = row.iloc[-1]
+        # default color is not matching type
+        fc_h, ec_h = "grey", "grey"
+        fc_s, ec_s = "grey", "grey"
+        if rod_type == 0:
+            fc_h, ec_h = "g", "g"
+            fc_s, ec_s = "r", "r"
+        elif rod_type == 1:
+            fc_h, ec_h = "blue", "blue"
+            fc_s, ec_s = "black", "black"
+
         c: patches.Circle = patches.Circle(
-            xy=(row[2], row[3]), radius=0.5, fc="g", ec="g"
+            xy=(row[2], row[3]), radius=0.5, fc=fc_h, ec=ec_h
         )
         if row[1] == 0:
-            c = patches.Circle(xy=(row[2], row[3]), radius=0.5, fc="r", ec="r")
+            c = patches.Circle(xy=(row[2], row[3]), radius=0.5, fc=fc_s, ec=ec_s)
         ax.add_patch(c)
 
     # plt.axis("scaled")

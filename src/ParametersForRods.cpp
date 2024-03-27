@@ -16,7 +16,8 @@ ParametersForRods::ParametersForRods(
     double diameter_of_segment,
     double viscosity,
     int num_of_rods,
-    int num_of_segments
+    int num_of_segments,
+    double intelligent_rods_ratio
 )
 {
     this->length = length;
@@ -24,6 +25,7 @@ ParametersForRods::ParametersForRods(
     this->aspect_ratio = this->length / this->diameter_of_segment;
     this->num_of_rods = num_of_rods;
     this->num_of_segments = num_of_segments;
+    this->intelligent_rods_ratio = intelligent_rods_ratio;
 
     std::tie(
         this->viscosity_parallel,
@@ -42,7 +44,8 @@ ParametersForRods::ParametersForRods(
     double length,
     double diameter_of_segment,
     double viscosity,
-    int num_of_rods
+    int num_of_rods,
+    double intelligent_rods_ratio
 )
 {
     this->length = length;
@@ -50,6 +53,7 @@ ParametersForRods::ParametersForRods(
     this->aspect_ratio = this->length / this->diameter_of_segment;
     this->num_of_rods = num_of_rods;
     this->num_of_segments = CalcNumberOfSegment(this->aspect_ratio);
+    this->intelligent_rods_ratio = intelligent_rods_ratio;
 
     std::tie(
         this->viscosity_parallel,
@@ -71,6 +75,7 @@ ParametersForRods::ParametersForRods(json parameter_json)
     this->aspect_ratio = this->length / this->diameter_of_segment;
     this->num_of_rods = parameter_json["number_of_rods"].template get<int>();
     this->num_of_segments = CalcNumberOfSegment(this->aspect_ratio);
+    this->intelligent_rods_ratio = parameter_json["intelligent_rods_ratio"].template get<double>();
 
     double viscosity = parameter_json["viscosity"].template get<double>();
 
@@ -106,6 +111,8 @@ ParametersForActiveRods::ParametersForActiveRods(ParametersForRods parameter, do
     this->fluidity_rotation = parameter.fluidity_rotation;
     this->active_force = active_force;
     this->self_propelling_velocity = this->active_force * this->fluidity_parallel;
+
+    
 }
 
 ParametersForActiveRods::ParametersForActiveRods(json parameter_json)
@@ -115,6 +122,7 @@ ParametersForActiveRods::ParametersForActiveRods(json parameter_json)
     this->aspect_ratio = this->length / this->diameter_of_segment;
     this->num_of_rods = parameter_json["number_of_rods"].template get<int>();
     this->num_of_segments = CalcNumberOfSegment(this->aspect_ratio);
+    this->intelligent_rods_ratio = parameter_json["intelligent_rods_ratio"].template get<double>();
 
     double viscosity = parameter_json["viscosity"].template get<double>();
 
@@ -239,6 +247,7 @@ void ParametersForRods::DisplayParameters() const
     std::cout << "parallel fluidity = " << this->fluidity_parallel << std::endl;
     std::cout << "vertical fluidity = " << this->fluidity_vertical << std::endl;
     std::cout << "rotational fluidity = " << this->fluidity_rotation << std::endl;
+    std::cout << "ratio of intelligent rods = " << this->intelligent_rods_ratio << std::endl;
 }
 
 void ParametersForActiveRods::DisplayParameters() const

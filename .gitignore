@@ -1,0 +1,11 @@
+execute/__pycache__/
+libtorch/
+project/periodic/_deps/
+project/periodic/bin/
+project/periodic/build/
+project/periodic/data/
+project/periodic/policy.pt
+project/periodic/policy_old.pt
+project/periodic/saved_policy.pt
+visualize/__pycache__/
+

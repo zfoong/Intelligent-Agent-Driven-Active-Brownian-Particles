@@ -7,4 +7,4 @@ cmake -S . -B build
 cmake --build build
 
 # Run the executable
-python3 execute/run.py
+# python3 execute/run.py
