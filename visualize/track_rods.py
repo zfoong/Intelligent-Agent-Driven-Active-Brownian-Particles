@@ -1,3 +1,4 @@
+import argparse
 import json
 
 import make_fig_of_snapshot as mksnap
@@ -7,10 +8,19 @@ print("parameter file is " + parameter_file)
 with open(parameter_file) as f:
     params = json.load(f)
 simulation_phases = params["phases"]
-with_boundary = params["with_boundary"]
 step_interval_for_output = params["step_interval_for_output"]
 
-phase_index = 0
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--phase", "-p",
+    nargs="?",
+    type=int,
+    default=0,
+    help="phase index"
+)
+args = parser.parse_args()
+phase_index = args.phase
+
 simulation_phase = simulation_phases[phase_index]
 total_steps = simulation_phase["total_steps"]
 steps_digits = len(str(total_steps))
