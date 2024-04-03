@@ -18,8 +18,17 @@ parser.add_argument(
     default=0,
     help="phase index"
 )
+parser.add_argument(
+    "--index_begin",
+    "-i",
+    nargs="?",
+    type=int,
+    default=0,
+    help="index from which loop starts",
+)
 args = parser.parse_args()
 phase_index = args.phase
+index_begin = args.index_begin
 
 simulation_phase = simulation_phases[phase_index]
 total_steps = simulation_phase["total_steps"]
@@ -36,7 +45,7 @@ fig_folderpath = root_folderpath + "fig/"
 if with_boundary is True:
     boundary_folderpath = root_folderpath + "boundary/"
 
-for time in range(0, total_steps, step_interval_for_output):
+for time in range(index_begin, total_steps, step_interval_for_output):
     time_str = str(time).zfill(steps_digits)
     data_filename = "segments" + time_str + ".dat"
     fig_filename = "segments" + time_str + ".png"
