@@ -8,6 +8,7 @@ print("parameter file is " + parameter_file)
 with open(parameter_file) as f:
     params = json.load(f)
 simulation_phases = params["phases"]
+with_boundary = "boundary" in params["data_types"]
 step_interval_for_output = params["step_interval_for_output"]
 
 parser = argparse.ArgumentParser()
