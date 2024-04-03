@@ -21,6 +21,16 @@ Periodic::~Periodic()
 {
 }
 
+PeriodicCompression::PeriodicCompression(Rods &rods, ParametersForRods &parameter_for_rods) : rods(rods), parameter(parameter_for_rods)
+{
+    std::cout << "-- Parameters for Rods in Compression --" << std::endl;
+    this->parameter.DisplayParameters();
+}
+
+PeriodicCompression::~PeriodicCompression()
+{
+}
+
 void Periodic::Run(json parameter_json, int phase_index, std::string root_directory_of_data, double time_scale)
 {
     json phase_parameter_json = parameter_json["phases"][phase_index];
@@ -152,6 +162,56 @@ void Periodic::Run(json parameter_json, int phase_index, std::string root_direct
 
 
 
+    }
+    std::cout << "finish " << phase_name << " phase!" << std::endl;
+}
+
+void PeriodicCompression::Run(json parameter_json, int phase_index, std::string root_directory_of_data, double time_scale, double initial_linear_dimension, double final_linear_dimension)
+{
+    json phase_parameter_json = parameter_json["phases"][phase_index];
+
+    const std::string phase_name = phase_parameter_json["name"].template get<std::string>();
+    const int total_steps = phase_parameter_json["total_steps"].template get<int>();
+    const int total_steps_digits = std::to_string(total_steps).length();
+    const double x_min = phase_parameter_json["x_min"].template get<double>();
+    double x_max = phase_parameter_json["x_max"].template get<double>();
+    const double y_min = phase_parameter_json["y_min"].template get<double>();
+    double y_max = phase_parameter_json["y_max"].template get<double>();
+
+    double linear_dimension = initial_linear_dimension;
+    const double ratio = std::pow(final_linear_dimension / initial_linear_dimension, 1. / total_steps);
+
+    parameter_json["time_scaled_interaction_strength"]
+        = parameter_json["interaction_strength"].template get<double>() / parameter.num_of_segments / parameter.num_of_segments
+        * time_scale * time_scale; // interaction potential coefficient scaled by time interval per time step in simulation
+    ForcesOnSegments2d rod_rod_forces(parameter, parameter_json["time_scaled_interaction_strength"].template get<double>());
+
+    std::cout << "start " << phase_name << " phase..." << std::endl;
+    for (int steps = 0; steps < total_steps; steps++) {
+        rod_rod_forces.calcRodRodYukawaForcesWithPeriodic(rods, x_min, x_max, y_min, y_max);
+        rod_rod_forces.calcForcesOnRods2d(rods);
+        auto [fx_rod_rod, fy_rod_rod, torque_rod_rod] = rod_rod_forces.getForcesOnRods2d();
+        rod_rod_forces.ClearCalculatedForces();
+        rods.addForces(fx_rod_rod, fy_rod_rod, torque_rod_rod);
+
+        rods.calcVelocitiesFromForces();
+
+        // gifファイル作成のためのデータ出力開始
+        if ((steps % parameter_json["step_interval_for_output"].template get<int>()) == 0) {
+            rods.writeData(root_directory_of_data, phase_name, steps, total_steps_digits);
+        }
+        // gifファイル作成のためのデータ出力終了
+        if ((total_steps >= 10) && (steps % (total_steps / 10) == 0)) {  // show progress
+            DisplayProgress(steps, total_steps);
+        }
+
+        rods.updateRods();
+        rods.periodic(x_min, x_max, y_min, y_max);
+
+        linear_dimension *= ratio;
+        x_max = linear_dimension;
+        y_max = linear_dimension;
+        rods.scalePosition(ratio);
     }
     std::cout << "finish " << phase_name << " phase!" << std::endl;
 }
