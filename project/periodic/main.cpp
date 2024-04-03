@@ -7,6 +7,8 @@
 #include <string>
 #include <sstream>
 #include <random>
+#include <cmath>
+#include <numbers>
 #include <nlohmann/json.hpp>
 #include "Periodic.hpp"
 #include "Rods.hpp"
@@ -43,8 +45,16 @@ int main(int argc, char** argv)
     const double length_of_rods = parameter_json["length_of_rods"].template get<double>();
     const double diameter_of_segments = parameter_json["diameter_of_segments"].template get<double>();
     const int number_of_rods = parameter_json["number_of_rods"];
+
     const int square_lattice_size = (int) std::ceil(std::sqrt(number_of_rods));
-    double linear_dimension = length_of_rods * square_lattice_size;
+    const double initial_linear_dimension = length_of_rods * square_lattice_size;
+    const double area_of_rods = number_of_rods * (diameter_of_segments * (length_of_rods - diameter_of_segments) + std::numbers::pi * diameter_of_segments * diameter_of_segments / 4);
+    const double area_fraction = parameter_json["area_fraction"].template get<double>();
+    const double final_linear_dimension = std::sqrt(area_of_rods / area_fraction);
+    parameter_json["initial_linear_dimension"] = initial_linear_dimension;
+    parameter_json["final_linear_dimension"] = final_linear_dimension;
+
+    double linear_dimension = std::max(initial_linear_dimension, final_linear_dimension);
 
     const double time_interval_per_step = parameter_json["given_time_interval_per_step"].template get<double>() * std::sqrt(linear_dimension * linear_dimension / number_of_rods / diameter_of_segments / diameter_of_segments);
     parameter_json["time_interval_per_step"] = time_interval_per_step;
@@ -61,9 +71,6 @@ int main(int argc, char** argv)
     double dts, dte;
     dts = GetTime();
 
-    const double total_times = parameter_json["phases"][0]["given_total_times"].template get<double>() * linear_dimension;
-    const int total_steps = total_times * steps_in_unit_time;
-
     ParametersForActiveRods parameter(parameter_json);
     std::cout << "-- Parameters for Rods in Real Time --" << std::endl;
     parameter.DisplayParameters();
@@ -75,18 +82,42 @@ int main(int argc, char** argv)
     rods.translate(length_of_rods / 2, length_of_rods / 2);
     rods.periodic(0., linear_dimension, 0., linear_dimension);
 
+    int phase_index = 0;
+    double total_times = parameter_json["phases"][phase_index]["given_total_times"].template get<double>() * (linear_dimension - final_linear_dimension);
+    int total_steps = total_times * steps_in_unit_time;
 
     // parameters in phase
-    parameter_json["phases"][0]["total_times"] = total_times;
-    parameter_json["phases"][0]["total_steps"] = total_steps;
-    parameter_json["phases"][0]["x_min"] = 0.;
-    parameter_json["phases"][0]["x_max"] = linear_dimension;
-    parameter_json["phases"][0]["y_min"] = 0.;
-    parameter_json["phases"][0]["y_max"] = linear_dimension;
+    parameter_json["phases"][phase_index]["total_times"] = total_times;
+    parameter_json["phases"][phase_index]["total_steps"] = total_steps;
+    parameter_json["phases"][phase_index]["x_min"] = 0.;
+    parameter_json["phases"][phase_index]["x_max"] = linear_dimension;
+    parameter_json["phases"][phase_index]["y_min"] = 0.;
+    parameter_json["phases"][phase_index]["y_max"] = linear_dimension;
+
+    const bool shouldBeCompressed = final_linear_dimension < initial_linear_dimension;
+    if (shouldBeCompressed) {
+        WriteParametersJson(root_directory_of_data, "parameters_used.json", parameter_json);
+        PeriodicCompression periodic_compression(rods, parameter);
+        periodic_compression.Run(parameter_json, phase_index, root_directory_of_data, time_interval_per_step, initial_linear_dimension, final_linear_dimension);
+        WriteParametersJson(root_directory_of_data, "parameters_used.json", parameter_json);
+        linear_dimension = final_linear_dimension;
+    }
+
+    phase_index = 1;
+    total_times = parameter_json["phases"][phase_index]["given_total_times"].template get<double>() * linear_dimension;
+    total_steps = total_times * steps_in_unit_time;
+
+    // parameters in phase
+    parameter_json["phases"][phase_index]["total_times"] = total_times;
+    parameter_json["phases"][phase_index]["total_steps"] = total_steps;
+    parameter_json["phases"][phase_index]["x_min"] = 0.;
+    parameter_json["phases"][phase_index]["x_max"] = linear_dimension;
+    parameter_json["phases"][phase_index]["y_min"] = 0.;
+    parameter_json["phases"][phase_index]["y_max"] = linear_dimension;
 
     WriteParametersJson(root_directory_of_data, "parameters_used.json", parameter_json);
     Periodic periodic(rods, parameter);
-    periodic.Run(parameter_json, 0, root_directory_of_data, time_interval_per_step);
+    periodic.Run(parameter_json, phase_index, root_directory_of_data, time_interval_per_step);
     WriteParametersJson(root_directory_of_data, "parameters_used.json", parameter_json);
 
     dte = GetTime();
