@@ -1,6 +1,9 @@
 {
   "project": "periodic",
-  "phases": [{ "name": "periodic", "given_total_times": 100 }],
+  "phases": [
+    { "name": "compress", "given_total_times": 100 },
+    { "name": "periodic", "given_total_times": 400 }
+  ],
   "with_boundary": false,
   "threads": 1,
   "given_time_interval_per_step": 0.002,
