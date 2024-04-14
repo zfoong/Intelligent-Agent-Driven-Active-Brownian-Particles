@@ -35,8 +35,7 @@ if __name__ == "__main__":
     exec_file = working_dir + "bin/" + project_name
     print("exec file is " + exec_file)
 
-    with_boundary = params["with_boundary"]
-    mkdir(working_dir, with_boundary)
+    mkdir(working_dir)
 
     run(exec_file, parameter_file)
 

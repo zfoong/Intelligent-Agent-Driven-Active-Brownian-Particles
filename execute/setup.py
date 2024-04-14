@@ -2,7 +2,7 @@ import json
 import os
 
 
-def mkdir(working_dir, with_boundary=True):
+def mkdir(working_dir):
     data_dir = working_dir + "data/"
     print("data directory is " + data_dir)
 
@@ -11,16 +11,13 @@ def mkdir(working_dir, with_boundary=True):
     with open(parameter_file) as f:
         params = json.load(f)
     simulation_phases = params["phases"]
-
-    if with_boundary is True:
-        data_types = ["rods", "segments", "boundary", "fig"]
-    else:
-        data_types = ["rods", "segments", "fig"]
+    data_types = params["data_types"]
 
     for simulation_phase in simulation_phases:
         for data_type in data_types:
             os.makedirs(
-                data_dir + simulation_phase["name"] + "/" + data_type, exist_ok=True
+                data_dir + simulation_phase["name"] + "/" + data_type,
+                exist_ok=True
             )
 
 
