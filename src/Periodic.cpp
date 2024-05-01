@@ -1,6 +1,9 @@
 #include <iostream>
 #include <nlohmann/json.hpp>
 #include <cmath>
+#include <vector>
+#include <deque>
+#include <numeric>
 
 #include "Periodic.hpp"
 #include "Rods.hpp"
@@ -58,8 +61,8 @@ void Periodic::Run(json parameter_json, int phase_index, std::string root_direct
     double reward_accum_delta = parameter_json["reward_accum_delta"].template get<double>(); // reward accumulate for n time step
     double range_neighbor = parameter_json["range_neighbor"].template get<double>();        // perception range of rods
     double intelligent_rods_ratio = parameter_json["intelligent_rods_ratio"].template get<double>(); // ratio of intelligent rods
-    double vision_ray_count = 8;
-    double r_v = 5;
+    double vision_ray_count = 16;
+    double r_v = 10;
 
     const int num_of_intelligent_rods = static_cast<int>(parameter.num_of_rods * intelligent_rods_ratio);
     const int num_of_vicsek_rods = parameter.num_of_rods - num_of_intelligent_rods;
@@ -79,6 +82,9 @@ void Periodic::Run(json parameter_json, int phase_index, std::string root_direct
 
     // RL: Get current state of the environment
     std::vector<std::vector<double>> state = rods.getAll1DVisionArray(r_v, vision_ray_count);
+
+    const int reward_history_length = 10;
+    std::deque<std::vector<double>> reward_history;
 
     // Main loop
     for (int steps = 0; steps < total_steps; steps++) {
@@ -112,10 +118,6 @@ void Periodic::Run(json parameter_json, int phase_index, std::string root_direct
 
         rods.calcVelocitiesFromForces();
 
-        // gifファイル作成のためのデータ出力開始
-        if ((steps % parameter_json["step_interval_for_output"].template get<int>()) == 0) {
-            rods.writeData(root_directory_of_data, phase_name, steps, total_steps_digits);
-        }
         // gifファイル作成のためのデータ出力終了
         if ((total_steps >= 10) && (steps % (total_steps / 10) == 0)) {  // show progress
             DisplayProgress(steps, total_steps);
@@ -126,12 +128,19 @@ void Periodic::Run(json parameter_json, int phase_index, std::string root_direct
 
         // RL: Get new state and calculate reward
         std::vector<std::vector<double>> new_state = rods.getAll1DVisionArray(r_v, vision_ray_count);
-        std::vector<double> reward = rods.getAllActiveWorkByRodWithinRange(reward_accum_delta, range_neighbor);
+        std::vector<double> current_reward = rods.getAllComplexActiveWorkByRod(reward_accum_delta);
+        std::vector<double> reward = current_reward; //calculateWeightedAverageReward(current_reward, reward_history, reward_history_length);
 
         if ((total_steps >= 10) && (steps % (total_steps / 10) == 0)) {  // show reward
             std::cout << "Current Reward is " << reward << std::endl;
         }
-        
+
+        // gifファイル作成のためのデータ出力開始
+        if ((steps % parameter_json["step_interval_for_output"].template get<int>()) == 0) {
+            rods.writeData(root_directory_of_data, phase_name, steps, total_steps_digits);
+            rl_agent.writeTrainingLog(root_directory_of_data, phase_name, steps, total_steps_digits, reward);
+        }
+
         // RL: insert to buffer
         // buffer insert reward and is_terminate
         std::vector<bool> is_terminal(reward.size(), false);
@@ -159,9 +168,6 @@ void Periodic::Run(json parameter_json, int phase_index, std::string root_direct
                 rl_agent.save("saved_policy.pt");
             }
         }
-
-
-
     }
     std::cout << "finish " << phase_name << " phase!" << std::endl;
 }

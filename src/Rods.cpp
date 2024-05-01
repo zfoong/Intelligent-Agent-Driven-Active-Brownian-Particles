@@ -7,6 +7,7 @@
 #include <cmath>
 #include <random>
 #include <vector>
+#include <numeric>
 #include "Rods.hpp"
 #include "util.hpp"
 
@@ -49,6 +50,11 @@ Rods::Rods(ParametersForRods parameter) : parameter(parameter)
     force_y.resize(num_of_rods);
     torque.resize(num_of_rods);
     type.resize(num_of_rods);
+
+    last_vx.resize(num_of_rods);
+    last_vy.resize(num_of_rods);
+    last_force_x.resize(num_of_rods);
+    last_force_y.resize(num_of_rods);
 
     for (int i = 0; i < num_of_rods; ++i) {
         if (i < num_of_vicsek_rods) {
@@ -194,6 +200,12 @@ void Rods::updateRods()
 
 void Rods::resetTemporaryVariables()
 {
+
+    last_vx = vx;
+    last_vy = vy;
+    last_force_y = force_y;
+    last_force_x = force_x;
+
     std::fill(vx.begin()     , vx.end(),      0.);
     std::fill(vy.begin()     , vy.end(),      0.);
     std::fill(omega.begin()  , omega.end(),   0.);
@@ -418,10 +430,13 @@ void Rods::writeRodsSegmentsData(std::string filename) const
 double Rods::getActiveWorkByRod(int rod_i, double timeStep) 
 {
 
-    double displacement_x = this->vx.at(rod_i) * timeStep;
-    double displacement_y = this->vy.at(rod_i) * timeStep;
+    double displacement_x = this->last_vx.at(rod_i) * timeStep;
+    double displacement_y = this->last_vy.at(rod_i) * timeStep;
 
-    return this->force_x.at(rod_i) * displacement_x + this->force_y.at(rod_i) * displacement_y;
+    // This scale the reward higher
+    const double reward_coefficient = 100000;
+
+    return (this->last_force_x.at(rod_i) * displacement_x + this->last_force_y.at(rod_i) * displacement_y)*reward_coefficient;
 }
 
 // Calculate active work done by an individual rod
@@ -448,7 +463,7 @@ double Rods::getActiveWorkByRodWithinRange(size_t rod_i, double timeStep, double
     return avg_active_work / count;
 }
 
-// Calculate active work done by an individual rod
+// Calculate active work done by an individual rod within range
 std::vector<double> Rods::getAllActiveWorkByRodWithinRange(double timeStep, double range_n) 
 {
     std::vector<double> local_active_work;
@@ -457,6 +472,36 @@ std::vector<double> Rods::getAllActiveWorkByRodWithinRange(double timeStep, doub
         local_active_work.push_back(aw);
     }
     return local_active_work;
+}
+
+// Calculate active work done by an individual rod
+std::vector<double> Rods::getAllActiveWorkByRod(double timeStep) 
+{
+    std::vector<double> local_active_work;
+    for (size_t rod_i = 0; rod_i < xg.size(); rod_i++) {
+        double aw = getActiveWorkByRod(rod_i, timeStep);
+        local_active_work.push_back(aw);
+    }
+    return local_active_work;
+}
+
+// Calculate local and global active work done by an individual rod
+std::vector<double> Rods::getAllComplexActiveWorkByRod(double timeStep) 
+{
+    std::vector<double> active_work;
+    for (size_t rod_i = 0; rod_i < xg.size(); rod_i++) {
+        double aw = getActiveWorkByRod(rod_i, timeStep);
+        active_work.push_back(aw);
+    }
+
+    double sum = std::accumulate(active_work.begin(), active_work.end(), 0.0);
+    double average = sum / active_work.size();
+
+    for (double& work : active_work) {
+        work += average;
+    }
+
+    return active_work;
 }
 
 // Calculate total active work done by all rods

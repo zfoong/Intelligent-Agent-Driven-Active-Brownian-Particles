@@ -1,10 +1,11 @@
 {
+  "name":"A",
   "project": "periodic",
   "phases": [
-    { "name": "compress", "given_total_times": 100 },
-    { "name": "periodic", "given_total_times": 400 }
+    { "name": "compress", "given_total_times": 1 },
+    { "name": "periodic", "given_total_times": 4 }
   ],
-  "data_types": ["rods", "segments", "fig"],
+  "data_types": ["rods", "segments", "fig", "training_logs"],
   "threads": 1,
   "given_time_interval_per_step": 0.002,
   "step_interval_for_output": 1000,
@@ -20,13 +21,13 @@
   "action_std_decay_freq": 25000,
   "action_std": 0.6,
   "action_std_decay_rate": 0.05,
-  "min_action_std": 0.1,
-  "K_epochs": 80,
+  "min_action_std": 0.01,
+  "K_epochs": 160,
   "eps_clip": 0.2,
   "gamma": 0.99,
   "lr_actor": 0.0003,
   "lr_critic": 0.001,
   "reward_accum_delta": 10,
   "range_neighbor": 10,
-  "intelligent_rods_ratio": 0.5
+  "intelligent_rods_ratio": 1
 }

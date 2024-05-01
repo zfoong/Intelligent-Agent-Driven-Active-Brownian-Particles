@@ -36,12 +36,13 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    const std::string root_directory_of_data = "data/";
+
 
     // read a JSON file
     std::ifstream parameter_input(argv[1]);
     json parameter_json = json::parse(parameter_input);
 
+    const std::string name = parameter_json["name"];
     const double length_of_rods = parameter_json["length_of_rods"].template get<double>();
     const double diameter_of_segments = parameter_json["diameter_of_segments"].template get<double>();
     const int number_of_rods = parameter_json["number_of_rods"];
@@ -65,7 +66,6 @@ int main(int argc, char** argv)
     std::cout << "time_interval_per_step=" << time_interval_per_step << std::endl;
     std::cout << "steps_in_unit_time=" << steps_in_unit_time << std::endl;
     std::cout << "time interval per frame = " << time_interval_per_step * parameter_json["step_interval_for_output"].template get<int>() << std::endl;
-
 
     // time
     double dts, dte;
@@ -94,12 +94,16 @@ int main(int argc, char** argv)
     parameter_json["phases"][phase_index]["y_min"] = 0.;
     parameter_json["phases"][phase_index]["y_max"] = linear_dimension;
 
+    // define saved data directory
+    const std::string root_directory_of_data = "data/";
+    const std::string directory = root_directory_of_data + name + "/";
+
     const bool shouldBeCompressed = final_linear_dimension < initial_linear_dimension;
     if (shouldBeCompressed) {
-        WriteParametersJson(root_directory_of_data, "parameters_used.json", parameter_json);
+        WriteParametersJson(directory, "parameters_used.json", parameter_json);
         PeriodicCompression periodic_compression(rods, parameter);
-        periodic_compression.Run(parameter_json, phase_index, root_directory_of_data, time_interval_per_step, initial_linear_dimension, final_linear_dimension);
-        WriteParametersJson(root_directory_of_data, "parameters_used.json", parameter_json);
+        periodic_compression.Run(parameter_json, phase_index, directory, time_interval_per_step, initial_linear_dimension, final_linear_dimension);
+        WriteParametersJson(directory, "parameters_used.json", parameter_json);
         linear_dimension = final_linear_dimension;
     }
 
@@ -115,10 +119,10 @@ int main(int argc, char** argv)
     parameter_json["phases"][phase_index]["y_min"] = 0.;
     parameter_json["phases"][phase_index]["y_max"] = linear_dimension;
 
-    WriteParametersJson(root_directory_of_data, "parameters_used.json", parameter_json);
+    WriteParametersJson(directory, "parameters_used.json", parameter_json);
     Periodic periodic(rods, parameter);
-    periodic.Run(parameter_json, phase_index, root_directory_of_data, time_interval_per_step);
-    WriteParametersJson(root_directory_of_data, "parameters_used.json", parameter_json);
+    periodic.Run(parameter_json, phase_index, directory, time_interval_per_step);
+    WriteParametersJson(directory, "parameters_used.json", parameter_json);
 
     dte = GetTime();
 

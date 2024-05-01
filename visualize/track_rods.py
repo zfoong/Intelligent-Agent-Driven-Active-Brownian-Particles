@@ -43,6 +43,7 @@ ranges = {
 root_folderpath = "data/" + simulation_phase["name"] + "/"
 data_folderpath = root_folderpath + "segments/"
 fig_folderpath = root_folderpath + "fig/"
+
 if with_boundary is True:
     boundary_folderpath = root_folderpath + "boundary/"
 

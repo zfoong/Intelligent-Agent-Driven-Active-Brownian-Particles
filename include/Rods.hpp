@@ -23,6 +23,10 @@ protected:
     std::vector<double> force_x, force_y;   // forces on center of mass
     std::vector<double> torque;             // torque around z-axis through center of mass
 
+    /* data record for reward calculation */
+    std::vector<double> last_vx, last_vy;      // velocities of rods of last time step
+    std::vector<double> last_force_x, last_force_y;   // forces on center of mass of last time step
+
     std::vector<int> type;               // type of rods
     /* parameters of rods */
     const ParametersForRods parameter;
@@ -55,6 +59,8 @@ public:
     double getActiveWorkByRod(int rod_i, double timeStep);
     double getActiveWorkByRodWithinRange(size_t rod_i, double timeStep, double range_n);
     std::vector<double> getAllActiveWorkByRodWithinRange(double timeStep, double range_n);
+    std::vector<double> getAllActiveWorkByRod(double timeStep);
+    std::vector<double> getAllComplexActiveWorkByRod(double timeStep);
     double getTotalActiveWork(double timeStep);
     //bool isIntersecting(double ray_x1, double ray_y1, double ray_x2, double ray_y2, double segment_x, double segment_y, double segment_diameter);
     std::vector<double> get1DVisionArray(int rod_i, double r_v, int ray_count);

@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import subprocess
+import shutil
 
 from setup import mkdir
 
@@ -28,33 +29,42 @@ def run(exec_file, parameter_file):
     print(strlist_exec_doublet)
     proc = subprocess.Popen(strlist_exec_doublet, shell=False)
     proc.communicate()
-    # stdout of strlist_exec_doublet does not output in console
-    # try:
-    #     proc = subprocess.run(strlist_exec_doublet, capture_output=True)
-    # except subprocess.CalledProcessError as e:
-    #     print(e.output)
-    # print(proc.stdout.decode("utf-8"))
 
+def process_experiments(pending_dir, completed_dir, exec_file, working_dir):
+    # List all parameter files in the pending directory
+    parameter_files = [f for f in os.listdir(pending_dir) if f.endswith('.json')]
+    for parameter_file in parameter_files:
+        full_path = os.path.join(pending_dir, parameter_file)
+        print(f"Running experiment with: {full_path}")
+        
+        mkdir_data(working_dir, full_path)
+
+        # Run the experiment
+        run(exec_file, full_path)
+        
+        # Move the completed parameter file to the completed directory
+        shutil.move(full_path, os.path.join(completed_dir, parameter_file))
+        print(f"Moved {parameter_file} to {completed_dir}")
 
 if __name__ == "__main__":
     print(datetime.datetime.today())
 
-    # config root directory
     working_dir = os.getcwd() + "/"
     print("working directory is " + working_dir)
-
+    
+    pending_dir = os.path.join(working_dir, "execute/experiments/pending_experiments")
+    completed_dir = os.path.join(working_dir, "execute/experiments/completed_experiments")
+    mkdir(pending_dir)  
+    mkdir(completed_dir) 
+    
     parameter_file = working_dir + "parameters.json"
     with open(parameter_file) as f:
         params = json.load(f)
     project_name = params["project"]
-
-    exec_file = working_dir + "bin/" + project_name
+    
+    exec_file = os.path.join(working_dir, "bin", project_name)
     print("exec file is " + exec_file)
 
-    mkdir(working_dir)
-
-    mkdir_data(working_dir, parameter_file)
-
-    run(exec_file, parameter_file)
+    process_experiments(pending_dir, completed_dir, exec_file, working_dir)
 
     print(datetime.datetime.today())

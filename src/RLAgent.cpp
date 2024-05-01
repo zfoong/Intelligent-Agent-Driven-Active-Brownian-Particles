@@ -275,6 +275,9 @@ public:
         agent_buffer.addStateValue(state_val.item<double>());
 
         double action_value = action.item<double>();
+
+        //std::cout << "select action: " << action_value << std::endl;
+
         return action_value;
     }
 
@@ -470,6 +473,41 @@ public:
     void load(std::string checkpoint_path)
     {
         ppo.load(checkpoint_path);
+    }
+
+    void writeTrainingLog(std::string root_directory_of_data, std::string phase_name, int steps, int total_steps_digits, const std::vector<double>& rewards) const
+    {
+        std::ostringstream filename_number;
+        filename_number << std::setw(total_steps_digits) << std::setfill('0') << steps;
+        const std::string current_directory_of_data = root_directory_of_data + phase_name + "/";
+
+        std::string filename_log;
+        filename_log.reserve(100);
+        filename_log.append(current_directory_of_data)
+            .append("training_logs/training_log")
+            .append("_")
+            .append(filename_number.str())
+            .append(".dat");
+
+        writeLogData(filename_log, rewards);
+    }
+
+    void writeLogData(const std::string& filename, const std::vector<double>& rewards) const
+    {
+        FILE *fp;
+        fp = fopen(filename.c_str(), "w");
+        if (!fp) {
+            std::cerr << "Error opening file: " << filename << std::endl;
+            return;
+        }
+
+        // Calculate average reward
+        double sum = std::accumulate(rewards.begin(), rewards.end(), 0.0);
+        double average_reward = rewards.empty() ? 0 : sum / rewards.size();
+
+        fprintf(fp, "Average Reward: %7.2f\n", average_reward);
+
+        fclose(fp);
     }
 
 private:

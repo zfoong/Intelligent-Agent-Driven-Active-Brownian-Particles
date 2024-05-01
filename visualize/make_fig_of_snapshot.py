@@ -127,25 +127,33 @@ def with_head(
             )
             ax.plot(boundary[0], boundary[1], color="b")
 
+    # Calculate offsets for periodic boundary conditions
+    width = ranges['xmax'] - ranges['xmin']
+    height = ranges['ymax'] - ranges['ymin']
+    offsets = [(-width, 0), (width, 0), (0, -height), (0, height), (-width, -height), (-width, height), (width, -height), (width, height)]
+
     # fc = face color, ec = edge color
     for index, row in df.iterrows():
         rod_type = row.iloc[-1]
-        # default color is not matching type
+        x, y = row[2], row[3] 
+
+        # Default color
         fc_h, ec_h = "grey", "grey"
         fc_s, ec_s = "grey", "grey"
         if rod_type == 0:
             fc_h, ec_h = "g", "g"
             fc_s, ec_s = "r", "r"
         elif rod_type == 1:
-            fc_h, ec_h = "blue", "blue"
-            fc_s, ec_s = "black", "black"
+            fc_h, ec_h = "black", "black"  
+            fc_b, ec_b = "blue", "blue"  
 
-        c: patches.Circle = patches.Circle(
-            xy=(row[2], row[3]), radius=0.5, fc=fc_h, ec=ec_h
-        )
-        if row[1] == 0:
-            c = patches.Circle(xy=(row[2], row[3]), radius=0.5, fc=fc_s, ec=ec_s)
-        ax.add_patch(c)
+        for dx, dy in [(0, 0)] + offsets:
+            fc = fc_h if row[1] == 0 else fc_b
+            ec = ec_h if row[1] == 0 else ec_b
+            c = patches.Circle(
+                (x + dx, y + dy), radius=0.5, fc=fc, ec=ec
+            )
+            ax.add_patch(c)
 
     # plt.axis("scaled")
     # set_(x|y)lim does not work when axis is scaled

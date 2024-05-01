@@ -6,6 +6,9 @@
 #include "util.hpp"
 #include <torch/torch.h>
 #include <vector>
+#include <deque>
+#include <numeric>
+#include <cmath>
 
 using json = nlohmann::json;
 
@@ -60,4 +63,28 @@ torch::Tensor vector2DToTensor(const std::vector<std::vector<double>>& vec) {
     torch::Tensor tensor = torch::from_blob(flattened.data(), {static_cast<long>(vec.size()), static_cast<long>(vec[0].size())}, torch::kDouble);
 
     return tensor.clone(); // Return a clone of the tensor to make it own its memory
+}
+
+std::vector<double> calculateWeightedAverageReward(const std::vector<double>& new_reward, std::deque<std::vector<double>> reward_history, const int reward_history_length)
+{
+    if (reward_history.size() >= reward_history_length) {
+        reward_history.pop_front();
+    }
+    reward_history.push_back(new_reward);
+
+    std::vector<double> weighted_reward_sum(new_reward.size(), 0.0);
+    int i = 0;
+    for (auto it = reward_history.rbegin(); it != reward_history.rend(); ++it, ++i) {
+        double weight = std::exp(-0.05 * i); // Exponential decay factor
+        for (size_t j = 0; j < it->size(); j++) {
+            weighted_reward_sum[j] += (*it)[j] * weight;
+        }
+    }
+
+    double total_weights = (1.0 - std::exp(-0.05 * reward_history.size())) / (1.0 - std::exp(-0.05)); // Normalization factor for weights
+    for (size_t j = 0; j < weighted_reward_sum.size(); j++) {
+        weighted_reward_sum[j] /= total_weights;
+    }
+
+    return weighted_reward_sum;
 }
