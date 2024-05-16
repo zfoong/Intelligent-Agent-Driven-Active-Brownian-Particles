@@ -143,9 +143,31 @@ int main(int argc, char** argv)
 
         const bool shouldBeCompressed = final_linear_dimension < initial_linear_dimension;
         if (shouldBeCompressed) {
+            json boundaries_json = parameter_json["phases"][phase_index]["boundaries"];
+            std::vector<ParametersForCircularBoundary> parameters_for_boundary;
+            parameters_for_boundary.reserve(boundaries_json.size());
+            for (size_t i = 0; i < boundaries_json.size(); i++) {
+                const double radius = boundaries_json[i]["radius"].template get<double>();
+                const double center_x = boundaries_json[i]["center"]["x"].template get<double>();
+                const double center_y = boundaries_json[i]["center"]["y"].template get<double>();
+                if (boundaries_json[i]["center"]["relative"]) {
+                    parameters_for_boundary.emplace_back(
+                        radius,
+                        initial_linear_dimension * center_x,
+                        initial_linear_dimension * center_y
+                    );
+                } else {
+                    parameters_for_boundary.emplace_back(
+                        radius,
+                        center_x,
+                        center_y
+                    );
+                }
+            }
+
             WriteParametersJson(directory, "parameters_used.json", parameter_json);
-            PeriodicCompression periodic_compression(rods, parameter);
-            periodic_compression.Run(parameter_json, phase_index, directory, time_interval_per_step, initial_linear_dimension, final_linear_dimension);
+            ObstaclesInPeriodicCompression simulation(rods, parameter, parameters_for_boundary);
+            simulation.Run(parameter_json, phase_index, directory, time_interval_per_step, initial_linear_dimension, final_linear_dimension);
             WriteParametersJson(directory, "parameters_used.json", parameter_json);
             linear_dimension = final_linear_dimension;
         }
