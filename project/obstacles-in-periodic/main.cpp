@@ -186,9 +186,31 @@ int main(int argc, char** argv)
         parameter_json["phases"][phase_index]["y_min"] = 0.;
         parameter_json["phases"][phase_index]["y_max"] = linear_dimension;
 
+        json boundaries_json = parameter_json["phases"][phase_index]["boundaries"];
+        std::vector<ParametersForCircularBoundary> parameters_for_boundary;
+        parameters_for_boundary.reserve(boundaries_json.size());
+        for (size_t i = 0; i < boundaries_json.size(); i++) {
+            const double radius = boundaries_json[i]["radius"].template get<double>();
+            const double center_x = boundaries_json[i]["center"]["x"].template get<double>();
+            const double center_y = boundaries_json[i]["center"]["y"].template get<double>();
+            if (boundaries_json[i]["center"]["relative"]) {
+                parameters_for_boundary.emplace_back(
+                    radius,
+                    linear_dimension * center_x,
+                    linear_dimension * center_y
+                );
+            } else {
+                parameters_for_boundary.emplace_back(
+                    radius,
+                    center_x,
+                    center_y
+                );
+            }
+        }
+
         WriteParametersJson(directory, "parameters_used.json", parameter_json);
-        Periodic periodic(rods, parameter);
-        periodic.Run(parameter_json, phase_index, directory, time_interval_per_step);
+        ObstaclesInPeriodic simulation(rods, parameter, parameters_for_boundary);
+        simulation.Run(parameter_json, phase_index, directory, time_interval_per_step);
         WriteParametersJson(directory, "parameters_used.json", parameter_json);
     }
 
