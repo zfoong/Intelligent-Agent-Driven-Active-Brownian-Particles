@@ -6,10 +6,10 @@
 #include "Rods.hpp"
 #include "ParametersForCircularBoundary.hpp"
 #include "ParametersForForces.hpp"
-#include "RodsCircularObstacleCappedLennardJonesForces.hpp"
+#include "RodsCircularObstacleYukawaForces.hpp"
 #include "util.hpp"
 
-RodsCircularObstacleCappedLennardJonesForces::RodsCircularObstacleCappedLennardJonesForces(
+RodsCircularObstacleYukawaForces::RodsCircularObstacleYukawaForces(
     ParametersForRods parameter,
     ParametersForCircularBoundary &obstacle_parameter,
     ParametersForForces &forces_parameter
@@ -23,49 +23,44 @@ RodsCircularObstacleCappedLennardJonesForces::RodsCircularObstacleCappedLennardJ
     center_of_circle_x(obstacle_parameter.getPositionOfCenter().first),
     center_of_circle_y(obstacle_parameter.getPositionOfCenter().second),
 
-    cut_off_distance(parameter.diameter_of_segment / 2 + this->radius_of_circular_obstacle),    // r_min
-    cut_off_distance_2(cut_off_distance * cut_off_distance),
-    sigma(std::pow(2., 1. / 3.) * this->cut_off_distance),
-    sigma_2(sigma * sigma),
-    alpha_2(std::pow(2., 1. / 3.) * sigma_2 - cut_off_distance_2),    // alpha = (2^(1/3)sigma^2 - r_min^2)^(1/2)
-    interaction_strength(
-        24. * forces_parameter.interaction_strength  // 24 is originated from the expression of Lennard-Jones potential
-    )
+    cut_off_distance(forces_parameter.cut_off_distance),
+    interaction_strength(forces_parameter.interaction_strength),
+    inv_diameter_of_segment(1. / parameter.diameter_of_segment)
 {
 }
 
-void RodsCircularObstacleCappedLennardJonesForces::setInteractionStrength(double interaction_strength)
+void RodsCircularObstacleYukawaForces::setInteractionStrength(double interaction_strength)
 {
     this->interaction_strength = interaction_strength;
 }
 
-void RodsCircularObstacleCappedLennardJonesForces::setRadiusOfCircularObstacle(double radius_of_circular_obstacle)
+void RodsCircularObstacleYukawaForces::setRadiusOfCircularObstacle(double radius_of_circular_obstacle)
 {
     this->radius_of_circular_obstacle = radius_of_circular_obstacle;
 }
 
-void RodsCircularObstacleCappedLennardJonesForces::setCenterOfCircularObstacle(double center_of_circle_x, double center_of_circle_y)
+void RodsCircularObstacleYukawaForces::setCenterOfCircularObstacle(double center_of_circle_x, double center_of_circle_y)
 {
     this->center_of_circle_x = center_of_circle_x;
     this->center_of_circle_y = center_of_circle_y;
 }
 
-double RodsCircularObstacleCappedLennardJonesForces::getInteractionStrength() const
+double RodsCircularObstacleYukawaForces::getInteractionStrength() const
 {
     return this->interaction_strength;
 }
 
-std::tuple<std::vector<double>, std::vector<double>, std::vector<double>> RodsCircularObstacleCappedLennardJonesForces::getForcesOnRods() const
+std::tuple<std::vector<double>, std::vector<double>, std::vector<double>> RodsCircularObstacleYukawaForces::getForcesOnRods() const
 {
     return {rod_force_x, rod_force_y, rod_torque};
 }
 
-void RodsCircularObstacleCappedLennardJonesForces::compute(const Rods& rods)
+void RodsCircularObstacleYukawaForces::compute(const Rods& rods)
 {
     computeForcesOnSegments(rods);
     computeForcesOnRods(rods);
 }
-void RodsCircularObstacleCappedLennardJonesForces::computeForcesOnSegments(const Rods& rods)
+void RodsCircularObstacleYukawaForces::computeForcesOnSegments(const Rods& rods)
 {
     for (size_t rod_i = 0; rod_i < segment_force_x.size(); rod_i++) {
         for (size_t segment_j = 0; segment_j < segment_force_x.at(rod_i).size(); segment_j++) {
@@ -73,24 +68,18 @@ void RodsCircularObstacleCappedLennardJonesForces::computeForcesOnSegments(const
             auto [segment_x, segment_y] = rods.getPositionOfSegment(rod_i, segment_j);
             const double dx_from_center_of_circle_x = segment_x - center_of_circle_x;
             const double dy_from_center_of_circle_y = segment_y - center_of_circle_y;
-            // squared distance between the center of segment and center of circle
-            const double squared_distance = CalcSquaredDistance(dx_from_center_of_circle_x, dy_from_center_of_circle_y);
+            double distance_between_segment_and_center_of_circle = std::sqrt(CalcSquaredDistance(dx_from_center_of_circle_x, dy_from_center_of_circle_y));
+            double distance = distance_between_segment_and_center_of_circle - radius_of_circular_obstacle;
 
             // cut-off
-            if (squared_distance > cut_off_distance_2) continue;
-
-            // 1 / (alpha^2 + r^2)
-            const double inv_alpha_2_and_distance_2 = 1. / (alpha_2 + squared_distance);
-            // sigma^2 / (alpha^2 + r^2)
-            const double sigma_2_inv_alpha_2_and_distance_2 = sigma_2 / (alpha_2 + squared_distance);
-            // (sigma^2 / (alpha^2 + r^2))^3
-            const double sigma_2_inv_alpha_2_and_distance_2_3 = sigma_2_inv_alpha_2_and_distance_2 * sigma_2_inv_alpha_2_and_distance_2 * sigma_2_inv_alpha_2_and_distance_2;
+            if (distance > cut_off_distance) continue;
 
             const double force =
                 interaction_strength
-                * inv_alpha_2_and_distance_2
-                * sigma_2_inv_alpha_2_and_distance_2_3
-                * (2. * sigma_2_inv_alpha_2_and_distance_2_3 - 1.0);
+                * std::exp(- 2.0 * distance * inv_diameter_of_segment)
+                * (inv_diameter_of_segment + 0.5 / distance)
+                / distance_between_segment_and_center_of_circle
+                / distance;
 
             segment_force_x.at(rod_i).at(segment_j) = dx_from_center_of_circle_x * force;
             segment_force_y.at(rod_i).at(segment_j) = dy_from_center_of_circle_y * force;
@@ -98,7 +87,7 @@ void RodsCircularObstacleCappedLennardJonesForces::computeForcesOnSegments(const
     }
 }
 
-void RodsCircularObstacleCappedLennardJonesForces::computeForcesOnRods(const Rods& rods)
+void RodsCircularObstacleYukawaForces::computeForcesOnRods(const Rods& rods)
 {
     for (size_t rod_i = 0; rod_i < rod_force_x.size(); rod_i++) {
         auto [xg, yg] = rods.getPositionOfCenterOfMass(rod_i);
@@ -112,7 +101,7 @@ void RodsCircularObstacleCappedLennardJonesForces::computeForcesOnRods(const Rod
     }
 }
 
-void RodsCircularObstacleCappedLennardJonesForces::clear()
+void RodsCircularObstacleYukawaForces::clear()
 {
     for (size_t rod_i = 0; rod_i < rod_force_x.size(); rod_i++) {
         rod_force_x.at(rod_i) = 0.;

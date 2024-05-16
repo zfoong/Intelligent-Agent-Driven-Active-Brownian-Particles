@@ -7,7 +7,7 @@
 #include "ParametersForCircularBoundary.hpp"
 #include "ParametersForForces.hpp"
 
-class RodsCircularObstacleCappedLennardJonesForces
+class RodsCircularObstacleYukawaForces
 {
 protected:
     // forces acting on rod i
@@ -18,21 +18,17 @@ protected:
     double radius_of_circular_obstacle;
     double center_of_circle_x, center_of_circle_y;
 
-    // cut_off_distance is the distance at which the segment-obstacle potential energy V is exactly zero, cut_off_distance_2 = cut_off_distance^2
-    double cut_off_distance, cut_off_distance_2;
-    // sigma and alpha characterize the capping of the Lennard-Jones potential
-    // and is determined from one to the other, sigma_2 = sigma^2 and alpha_2 = alpha^2
-    double sigma, sigma_2; double alpha_2;
-    // coefficient of the Lennard-Jones potential usually denoted as 24ε
+    double cut_off_distance;
     double interaction_strength;
+    double inv_diameter_of_segment;
 
 public:
-    RodsCircularObstacleCappedLennardJonesForces(
+    RodsCircularObstacleYukawaForces(
         ParametersForRods parameter,
         ParametersForCircularBoundary &obstacle_parameter,
         ParametersForForces &forces_parameter
     );
-    ~RodsCircularObstacleCappedLennardJonesForces() = default;
+    ~RodsCircularObstacleYukawaForces() = default;
 
     void setInteractionStrength(double interaction_strength);
     void setRadiusOfCircularObstacle(double radius_of_circular_obstacle);
