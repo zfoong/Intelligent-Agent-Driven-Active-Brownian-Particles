@@ -7,8 +7,10 @@
 using json = nlohmann::json;
 
 #include "Periodic.hpp"
+#include "ObstaclesInPeriodic.hpp"
 #include "ParametersForRods.hpp"
 #include "Rods.hpp"
+#include "ParametersForCircularBoundary.hpp"
 #include "util.hpp"
 
 #include <sys/time.h>
@@ -82,6 +84,52 @@ int main(int argc, char** argv)
 
     {
         const int phase_index = 0;
+        const double total_times = parameter_json["phases"][phase_index]["given_total_times"].template get<double>();
+        const int total_steps = total_times * steps_in_unit_time;
+
+        // parameters in phase
+        parameter_json["phases"][phase_index]["total_times"] = total_times;
+        parameter_json["phases"][phase_index]["total_steps"] = total_steps;
+        parameter_json["phases"][phase_index]["x_min"] = 0.;
+        parameter_json["phases"][phase_index]["x_max"] = initial_linear_dimension;
+        parameter_json["phases"][phase_index]["y_min"] = 0.;
+        parameter_json["phases"][phase_index]["y_max"] = initial_linear_dimension;
+
+        json boundaries_json = parameter_json["phases"][phase_index]["boundaries"];
+        std::vector<ParametersForCircularBoundary> parameters_for_boundary;
+        parameters_for_boundary.reserve(boundaries_json.size());
+        for (size_t i = 0; i < boundaries_json.size(); i++) {
+            const double radius = boundaries_json[i]["radius"].template get<double>();
+            const double center_x = boundaries_json[i]["center"]["x"].template get<double>();
+            const double center_y = boundaries_json[i]["center"]["y"].template get<double>();
+            if (boundaries_json[i]["center"]["relative"]) {
+                parameters_for_boundary.emplace_back(
+                    radius,
+                    initial_linear_dimension * center_x,
+                    initial_linear_dimension * center_y
+                );
+            } else {
+                parameters_for_boundary.emplace_back(
+                    radius,
+                    center_x,
+                    center_y
+                );
+            }
+        }
+        const double final_interaction_strength_between_rod_obstacle = parameter_json["interaction_strength_between_rod_obstacle"].template get<double>();
+        const double ratio = 0.001;
+        const double initial_interaction_strength_between_rod_obstacle = final_interaction_strength_between_rod_obstacle * ratio;
+        parameter_json["initial_interaction_strength_between_rod_obstacle"] = initial_interaction_strength_between_rod_obstacle;
+        parameter_json["final_interaction_strength_between_rod_obstacle"] = final_interaction_strength_between_rod_obstacle;
+
+        WriteParametersJson(directory, "parameters_used.json", parameter_json);
+        ObstaclesSteepeningInPeriodic simulation(rods, parameter, parameters_for_boundary);
+        simulation.Run(parameter_json, phase_index, directory, time_interval_per_step, initial_interaction_strength_between_rod_obstacle * ratio, final_interaction_strength_between_rod_obstacle);
+        WriteParametersJson(directory, "parameters_used.json", parameter_json);
+    }
+
+    {
+        const int phase_index = 1;
         const double total_times = parameter_json["phases"][phase_index]["given_total_times"].template get<double>() * (linear_dimension - final_linear_dimension);
         const int total_steps = total_times * steps_in_unit_time;
 
@@ -104,7 +152,7 @@ int main(int argc, char** argv)
     }
 
     {
-        const int phase_index = 1;
+        const int phase_index = 2;
         const double total_times = parameter_json["phases"][phase_index]["given_total_times"].template get<double>() * linear_dimension;
         const int total_steps = total_times * steps_in_unit_time;
 

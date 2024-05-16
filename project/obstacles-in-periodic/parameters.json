@@ -2,10 +2,59 @@
   "name": "A",
   "project": "obstacles-in-periodic",
   "phases": [
-    { "name": "compress", "given_total_times": 1 },
-    { "name": "periodic", "given_total_times": 4 }
+    {
+      "name": "steepen",
+      "is_boundary_modified": false,
+      "boundaries": [
+        {
+          "type": "circular",
+          "radius": 3,
+          "center": { "x": 0.25, "y": 0.25, "relative": true }
+        },
+        {
+          "type": "circular",
+          "radius": 3,
+          "center": { "x": 0.75, "y": 0.75, "relative": true }
+        }
+      ],
+      "given_total_times": 1
+    },
+    {
+      "name": "compress",
+      "is_boundary_modified": true,
+      "boundaries": [
+        {
+          "type": "circular",
+          "radius": 3,
+          "center": { "x": 0.25, "y": 0.25, "relative": true }
+        },
+        {
+          "type": "circular",
+          "radius": 3,
+          "center": { "x": 0.75, "y": 0.75, "relative": true }
+        }
+      ],
+      "given_total_times": 1
+    },
+    {
+      "name": "periodic",
+      "is_boundary_modified": false,
+      "boundaries": [
+        {
+          "type": "circular",
+          "radius": 3,
+          "center": { "x": 0.25, "y": 0.25, "relative": true }
+        },
+        {
+          "type": "circular",
+          "radius": 3,
+          "center": { "x": 0.75, "y": 0.75, "relative": true }
+        }
+      ],
+      "given_total_times": 4
+    }
   ],
-  "data_types": ["rods", "segments", "fig", "training_logs"],
+  "data_types": ["rods", "segments", "boundary", "fig", "training_logs"],
   "threads": 1,
   "given_time_interval_per_step": 0.002,
   "step_interval_for_output": 1000,
@@ -16,6 +65,8 @@
   "self_propelling_force": 1.0,
   "viscosity": 1.0,
   "interaction_strength": 250,
+  "interaction_strength_between_rod_rod": 250,
+  "interaction_strength_between_rod_obstacle": 250,
   "update_freq": 1000,
   "save_model_freq": 100000,
   "action_std_decay_freq": 25000,
