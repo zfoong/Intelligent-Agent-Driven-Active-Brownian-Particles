@@ -49,6 +49,10 @@ target_sources(obstacles-in-periodic PRIVATE
     ${SOURCE_DIR}/Periodic.cpp
     ${SOURCE_DIR}/ParametersForRods.cpp
     ${SOURCE_DIR}/Rods.cpp
+    ${SOURCE_DIR}/ParametersForBoundary.cpp
+    ${SOURCE_DIR}/Boundary.cpp
+    ${SOURCE_DIR}/ParametersForCircularBoundary.cpp
+    ${SOURCE_DIR}/CircularBoundary.cpp
     ${SOURCE_DIR}/ForcesOnSegments2d.cpp
     ${SOURCE_DIR}/util.cpp
     ${SOURCE_DIR}/RLAgent.cpp
