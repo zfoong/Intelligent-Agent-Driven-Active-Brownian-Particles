@@ -53,6 +53,8 @@ target_sources(obstacles-in-periodic PRIVATE
     ${SOURCE_DIR}/Boundary.cpp
     ${SOURCE_DIR}/ParametersForCircularBoundary.cpp
     ${SOURCE_DIR}/CircularBoundary.cpp
+    ${SOURCE_DIR}/ParametersForForces.cpp
+    ${SOURCE_DIR}/RodsCircularObstacleCappedLennardJonesForces.cpp
     ${SOURCE_DIR}/ForcesOnSegments2d.cpp
     ${SOURCE_DIR}/util.cpp
     ${SOURCE_DIR}/RLAgent.cpp
