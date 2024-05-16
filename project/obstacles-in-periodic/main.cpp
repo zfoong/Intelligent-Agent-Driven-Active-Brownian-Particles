@@ -46,8 +46,13 @@ int main(int argc, char** argv)
     const int square_lattice_size = (int) std::ceil(std::sqrt(number_of_rods));
     const double initial_linear_dimension = length_of_rods * square_lattice_size;
     const double area_of_rods = number_of_rods * (diameter_of_segments * (length_of_rods - diameter_of_segments) + std::numbers::pi * diameter_of_segments * diameter_of_segments / 4);
+    double area_of_obstacles = 0.;
+    for (const auto &boundary : parameter_json["phases"][parameter_json["phases"].size() - 1]["boundaries"]) {
+        const double boundary_radius = boundary["radius"].template get<double>();
+        area_of_obstacles += std::numbers::pi * boundary_radius * boundary_radius;
+    }
     const double area_fraction = parameter_json["area_fraction"].template get<double>();
-    const double final_linear_dimension = std::sqrt(area_of_rods / area_fraction);
+    const double final_linear_dimension = std::sqrt((area_of_rods / area_fraction) + area_of_obstacles);
     parameter_json["initial_linear_dimension"] = initial_linear_dimension;
     parameter_json["final_linear_dimension"] = final_linear_dimension;
 
