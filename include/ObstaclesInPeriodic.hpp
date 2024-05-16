@@ -10,6 +10,18 @@ using json = nlohmann::json;
 #include "CircularBoundary.hpp"
 #include "Periodic.hpp"
 
+class ObstaclesInPeriodic : Periodic
+{
+protected:
+    std::vector<ParametersForCircularBoundary> &parameters_for_obstacles;
+    std::vector<CircularBoundary> obstacles;
+
+public:
+    ObstaclesInPeriodic(ActiveRods &active_rods, ParametersForActiveRods &parameter_for_active_rods, std::vector<ParametersForCircularBoundary> &parameters_for_obstacles);
+    ~ObstaclesInPeriodic();
+    void Run(json parameter_json, int phase_index, std::string root_directory_of_data, double time_scale);
+};
+
 class ObstaclesInPeriodicCompression : PeriodicCompression
 {
 protected:
