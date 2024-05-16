@@ -47,6 +47,7 @@ target_include_directories(obstacles-in-periodic PRIVATE
 
 target_sources(obstacles-in-periodic PRIVATE
     ${SOURCE_DIR}/Periodic.cpp
+    ${SOURCE_DIR}/ObstaclesInPeriodic.cpp
     ${SOURCE_DIR}/ParametersForRods.cpp
     ${SOURCE_DIR}/Rods.cpp
     ${SOURCE_DIR}/ParametersForBoundary.cpp
