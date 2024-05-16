@@ -58,7 +58,7 @@ for time in range(index_begin, total_steps, step_interval_for_output):
         )
         continue
 
-    boundary_num = simulation_phase["boundary_num"]
+    boundary_num = len(simulation_phase["boundaries"])
     if boundary_num == 1:
         boundary_filename_list = []
         if simulation_phase["is_boundary_modified"] is True:
@@ -69,12 +69,12 @@ for time in range(index_begin, total_steps, step_interval_for_output):
     else:
         boundary_filename_list = []
         if simulation_phase["is_boundary_modified"] is True:
-            for i in range(1, 1 + boundary_num):
+            for i in range(0, boundary_num):
                 boundary_filename_list.append(
                     "boundary" + str(i) + "_" + time_str + ".dat"
                 )
         else:
-            for i in range(1, 1 + boundary_num):
+            for i in range(0, boundary_num):
                 boundary_filename_list.append("boundary" + str(i) + ".dat")
 
     mksnap.with_head(
