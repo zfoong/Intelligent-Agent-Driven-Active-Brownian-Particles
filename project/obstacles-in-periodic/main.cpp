@@ -110,8 +110,8 @@ int main(int argc, char** argv)
             if (boundaries_json[i]["center"]["relative"]) {
                 parameters_for_boundary.emplace_back(
                     radius,
-                    initial_linear_dimension * center_x,
-                    initial_linear_dimension * center_y
+                    linear_dimension * center_x,
+                    linear_dimension * center_y
                 );
             } else {
                 parameters_for_boundary.emplace_back(
@@ -158,8 +158,8 @@ int main(int argc, char** argv)
                 if (boundaries_json[i]["center"]["relative"]) {
                     parameters_for_boundary.emplace_back(
                         radius,
-                        initial_linear_dimension * center_x,
-                        initial_linear_dimension * center_y
+                        linear_dimension * center_x,
+                        linear_dimension * center_y
                     );
                 } else {
                     parameters_for_boundary.emplace_back(
