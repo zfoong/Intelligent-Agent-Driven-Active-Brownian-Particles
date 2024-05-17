@@ -3,15 +3,14 @@ import json
 
 import make_fig_of_snapshot as mksnap
 
-parameter_file = "data/" + "parameters_used.json"
-print("parameter file is " + parameter_file)
-with open(parameter_file) as f:
-    params = json.load(f)
-simulation_phases = params["phases"]
-with_boundary = "boundary" in params["data_types"]
-step_interval_for_output = params["step_interval_for_output"]
-
 parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--name", "-n",
+    nargs="?",
+    type=str,
+    default="A",
+    help="name specifier"
+)
 parser.add_argument(
     "--phase", "-p",
     nargs="?",
@@ -28,8 +27,17 @@ parser.add_argument(
     help="index from which loop starts",
 )
 args = parser.parse_args()
+simulation_name = args.name
 phase_index = args.phase
 index_begin = args.index_begin
+
+parameter_file = "data/" + simulation_name + "/" + "parameters_used.json"
+print("parameter file is " + parameter_file)
+with open(parameter_file) as f:
+    params = json.load(f)
+simulation_phases = params["phases"]
+with_boundary = "boundary" in params["data_types"]
+step_interval_for_output = params["step_interval_for_output"]
 
 simulation_phase = simulation_phases[phase_index]
 total_steps = simulation_phase["total_steps"]
@@ -40,7 +48,7 @@ ranges = {
     "ymin": simulation_phase["y_min"],
     "ymax": simulation_phase["y_max"],
 }
-root_folderpath = "data/" + simulation_phase["name"] + "/"
+root_folderpath = "data/" + simulation_name + "/" + simulation_phase["name"] + "/"
 data_folderpath = root_folderpath + "segments/"
 fig_folderpath = root_folderpath + "fig/"
 
