@@ -1,0 +1,84 @@
+{
+  "name": "A",
+  "project": "obstacles-in-periodic",
+  "phases": [
+    {
+      "name": "steepen",
+      "is_boundary_modified": false,
+      "boundaries": [
+        {
+          "type": "circular",
+          "radius": 3,
+          "center": { "x": 0.25, "y": 0.25, "relative": true }
+        },
+        {
+          "type": "circular",
+          "radius": 3,
+          "center": { "x": 0.75, "y": 0.75, "relative": true }
+        }
+      ],
+      "given_total_times": 1
+    },
+    {
+      "name": "compress",
+      "is_boundary_modified": true,
+      "boundaries": [
+        {
+          "type": "circular",
+          "radius": 3,
+          "center": { "x": 0.25, "y": 0.25, "relative": true }
+        },
+        {
+          "type": "circular",
+          "radius": 3,
+          "center": { "x": 0.75, "y": 0.75, "relative": true }
+        }
+      ],
+      "given_total_times": 1
+    },
+    {
+      "name": "periodic",
+      "is_boundary_modified": false,
+      "boundaries": [
+        {
+          "type": "circular",
+          "radius": 3,
+          "center": { "x": 0.25, "y": 0.25, "relative": true }
+        },
+        {
+          "type": "circular",
+          "radius": 3,
+          "center": { "x": 0.75, "y": 0.75, "relative": true }
+        }
+      ],
+      "given_total_times": 4
+    }
+  ],
+  "data_types": ["rods", "segments", "boundary", "fig", "training_logs"],
+  "threads": 1,
+  "given_time_interval_per_step": 0.002,
+  "step_interval_for_output": 1000,
+  "area_fraction": 0.3,
+  "length_of_rods": 3.0,
+  "diameter_of_segments": 1.0,
+  "number_of_rods": 100,
+  "self_propelling_force": 1.0,
+  "viscosity": 1.0,
+  "interaction_strength_between_rod_rod": 250,
+  "interaction_strength_between_rod_rod_rl": 250,
+  "interaction_strength_between_rod_obstacle": 250,
+  "update_freq": 1000,
+  "save_model_freq": 100000,
+  "action_std_decay_freq": 25000,
+  "action_std": 0.6,
+  "action_std_decay_rate": 0.05,
+  "min_action_std": 0.01,
+  "K_epochs": 160,
+  "eps_clip": 0.2,
+  "gamma": 0.99,
+  "lr_actor": 0.0003,
+  "lr_critic": 0.001,
+  "reward_accum_delta": 10,
+  "range_neighbor": 10,
+  "intelligent_rods_ratio": 1
+}

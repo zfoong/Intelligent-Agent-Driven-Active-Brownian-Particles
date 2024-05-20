@@ -135,17 +135,17 @@ def with_head(
     # fc = face color, ec = edge color
     for index, row in df.iterrows():
         rod_type = row.iloc[-1]
-        x, y = row[2], row[3] 
+        x, y = row[2], row[3]
 
         # Default color
         fc_h, ec_h = "grey", "grey"
-        fc_s, ec_s = "grey", "grey"
+        fc_b, ec_b = "grey", "grey"
         if rod_type == 0:
-            fc_h, ec_h = "g", "g"
-            fc_s, ec_s = "r", "r"
+            fc_h, ec_h = "r", "r"
+            fc_b, ec_b = "g", "g"
         elif rod_type == 1:
-            fc_h, ec_h = "black", "black"  
-            fc_b, ec_b = "blue", "blue"  
+            fc_h, ec_h = "black", "black"
+            fc_b, ec_b = "blue", "blue"
 
         for dx, dy in [(0, 0)] + offsets:
             fc = fc_h if row[1] == 0 else fc_b
