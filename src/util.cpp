@@ -123,7 +123,7 @@ double NormalizeAngle(double angle, double reference_angle)
     return reference_angle + NormalizeAngle(angle - reference_angle);
 }
 
-double NearestInPeriodicLimitedRange(double x, double reference_x, double min_x, double max_x)
+double FindNearestInPeriodicLimitedRange(double x, double reference_x, double min_x, double max_x)
 {
     const double dx = x - reference_x;
     const double period = max_x - min_x;
@@ -141,7 +141,7 @@ double NearestInPeriodicLimitedRange(double x, double reference_x, double min_x,
     }
 }
 
-double NearestInPeriodic(double x, double reference_x, double min_x, double max_x)
+double FindNearestInPeriodic(double x, double reference_x, double min_x, double max_x)
 {
     const double dx = x - reference_x;
     const double period = max_x - min_x;
