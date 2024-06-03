@@ -9,6 +9,7 @@
 #include <deque>
 #include <numeric>
 #include <cmath>
+#include <numbers>
 
 using json = nlohmann::json;
 
@@ -87,4 +88,37 @@ std::vector<double> calculateWeightedAverageReward(const std::vector<double>& ne
     }
 
     return weighted_reward_sum;
+}
+
+// works only for angles in the range of -2pi to 4pi
+double NormalizeAngleLimitedRange(double angle)
+{
+    constexpr double twoPi = 2.0 * std::numbers::pi;
+    if (angle < 0) {
+        return angle + twoPi;
+    } else if (angle >= twoPi) {
+        return angle - twoPi;
+    }
+    return angle;
+}
+
+// works only for angles in the range of reference_angle - 2pi to reference_angle + 4pi
+double NormalizeAngleLimitedRange(double angle, double reference_angle)
+{
+    return reference_angle + NormalizeAngleLimitedRange(angle - reference_angle);
+}
+
+// works for any angles but has round-off errors around the ends of the range
+double NormalizeAngle(double angle)
+{
+    constexpr double twoPi = 2.0 * std::numbers::pi;
+    constexpr double invTwoPi = 1.0 / twoPi;
+
+    return angle - twoPi * std::floor(angle * invTwoPi);
+}
+
+// works for any angles but has round-off errors around the ends of the range
+double NormalizeAngle(double angle, double reference_angle)
+{
+    return reference_angle + NormalizeAngle(angle - reference_angle);
 }
