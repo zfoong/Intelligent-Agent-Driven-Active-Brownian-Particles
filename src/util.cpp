@@ -122,3 +122,28 @@ double NormalizeAngle(double angle, double reference_angle)
 {
     return reference_angle + NormalizeAngle(angle - reference_angle);
 }
+
+double NearestInPeriodicLimitedRange(double x, double reference_x, double min_x, double max_x)
+{
+    const double dx = x - reference_x;
+    const double period = max_x - min_x;
+
+    // original is nearest
+    if (std::abs(2 * dx) < period) return x;
+
+    // mirror is nearest
+    if (dx > 0) {
+        // x - period < reference_x < x, abs(x - period - reference_x) < abs(x - reference_x)
+        return x - period;
+    } else {
+        // x < reference_x < x + period, abs(x + period - reference_x) < abs(x - reference_x)
+        return x + period;
+    }
+}
+
+double NearestInPeriodic(double x, double reference_x, double min_x, double max_x)
+{
+    const double dx = x - reference_x;
+    const double period = max_x - min_x;
+    return x - period * std::round(dx / period);
+}

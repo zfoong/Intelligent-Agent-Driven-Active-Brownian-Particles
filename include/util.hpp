@@ -19,3 +19,5 @@ double NormalizeAngleLimitedRange(double angle);
 double NormalizeAngleLimitedRange(double angle, double reference_angle);
 double NormalizeAngle(double angle);
 double NormalizeAngle(double angle, double reference_angle);
+double NearestInPeriodicLimitedRange(double x, double reference_x, double min_x, double max_x);
+double NearestInPeriodic(double x, double reference_x, double min_x, double max_x);
