@@ -3,7 +3,7 @@ import json
 import os
 import matplotlib.pyplot as plt
 
-parameter_file = "data/" + "parameters_used.json"
+parameter_file = "data/B/" + "parameters_used.json"
 print("parameter file is " + parameter_file)
 with open(parameter_file) as f:
     params = json.load(f)
@@ -21,7 +21,7 @@ args = parser.parse_args()
 phase_index = args.phase
 
 simulation_phase = simulation_phases[phase_index]
-root_folderpath = "data/" + simulation_phase["name"] + "/"
+root_folderpath = "data/" + params["name"] + "/" + simulation_phase["name"] + "/"
 data_folderpath = root_folderpath + "training_logs/"
 
 def extract_reward(file_path):

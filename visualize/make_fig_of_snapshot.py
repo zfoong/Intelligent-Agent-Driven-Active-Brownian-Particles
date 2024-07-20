@@ -4,7 +4,6 @@ import matplotlib.patches as patches
 import matplotlib.pyplot as plt
 import pandas as pd
 
-
 def with_identical_rods(
     ranges: dict[str, float],
     data_folderpath: str,
@@ -49,7 +48,6 @@ def with_identical_rods(
     plt.savefig(fig_filepath)
 
     plt.close()
-
 
 def with_specific_rods(
     ranges: dict[str, float],
@@ -99,7 +97,6 @@ def with_specific_rods(
     plt.savefig(fig_filepath)
 
     plt.close()
-
 
 def with_head(
     ranges: dict[str, float],
@@ -154,6 +151,8 @@ def with_head(
                 (x + dx, y + dy), radius=0.5, fc=fc, ec=ec
             )
             ax.add_patch(c)
+            if fc == "black":  # Add ID text to black circles
+                ax.text(x + dx, y + dy, str(index), color="white", ha='center', va='center', fontsize=8)
 
     # plt.axis("scaled")
     # set_(x|y)lim does not work when axis is scaled

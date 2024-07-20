@@ -86,13 +86,16 @@ double Rods::initializeRodsOnSquareLattice()
     // std::random_device rnd;
     // std::mt19937 mt(rnd());
 
-    std::uniform_real_distribution<> uniform(- std::numbers::pi, std::numbers::pi);
+    const double fixed_theta = 0;
+    double offset = 0;
+
+    std::uniform_real_distribution<> uniform(-std::numbers::pi/2, std::numbers::pi/2);
 
     const int square_lattice_size = (int) std::ceil(std::sqrt(parameter.num_of_rods));
 
     for (size_t i = 0; i < xg.size(); i++) {
-        xg.at(i) = parameter.length * (i % square_lattice_size);
-        yg.at(i) = parameter.length * (i / square_lattice_size);
+        xg.at(i) = (parameter.length+offset) * (i % square_lattice_size);
+        yg.at(i) = (parameter.length+offset) * (i / square_lattice_size);
         theta.at(i) = uniform(mt);
         cos.at(i) = std::cos(theta.at(i));
         sin.at(i) = std::sin(theta.at(i));
@@ -100,7 +103,7 @@ double Rods::initializeRodsOnSquareLattice()
 
     calcSegmentsConformation();
 
-    return parameter.length * square_lattice_size;
+    return (parameter.length+offset) * square_lattice_size;
 }
 
 void Rods::calcSegmentsConformation()
@@ -319,13 +322,20 @@ std::vector<double> Rods::getAllAngleDifferenceWithinRange(double range_n) const
 
 double Rods::AngleDifference(int rod_i, int rod_j) const
 {
-    double rad_i = M_PI + theta.at(rod_i);
-    double rad_j = M_PI + theta.at(rod_j);
-    double d = fmodf(abs(rad_i - rad_j), (double)M_PI*2);
-    double r = d > M_PI ? M_PI*2 - d : d;
-    if ((rad_i - rad_j >= 0 && rad_i - rad_j <= M_PI) || (rad_i - rad_j <= -M_PI && rad_i - rad_j >= -M_PI*2)) 
-        return r;
-    return -r;
+    double theta_i = theta.at(rod_i);
+    double theta_j = theta.at(rod_j);
+
+    // Calculate the difference
+    double diff = theta_j - theta_i;
+
+    // Normalize the difference to be within the range of -pi to pi
+    // This accounts for both the magnitude and the direction of the rotation
+    diff = fmod(diff + M_PI, 2 * M_PI);
+    if (diff < 0)
+        diff += 2 * M_PI;
+    diff -= M_PI;
+
+    return diff;
 }
 
 void Rods::writeData(std::string root_directory_of_data, std::string phase_name, int steps, int total_steps_digits) const
@@ -429,20 +439,53 @@ void Rods::writeRodsSegmentsData(std::string filename) const
 // Calculate active work done by an individual rod
 double Rods::getActiveWorkByRod(int rod_i, double timeStep) 
 {
-
-    double displacement_x = this->last_vx.at(rod_i) * timeStep;
-    double displacement_y = this->last_vy.at(rod_i) * timeStep;
+    // active force acting on rod i
+    //double active_force_x = this->cos.at(rod_i) * 1;
+    //double active_force_y = this->sin.at(rod_i) * 1;
+    // displacement of rod i
+    //double displacement_x = this->last_vx.at(rod_i);
+    //double displacement_y = this->last_vy.at(rod_i);
 
     // This scale the reward higher
-    const double reward_coefficient = 100000;
+    //const double reward_coefficient = 100;
 
-    return (this->last_force_x.at(rod_i) * displacement_x + this->last_force_y.at(rod_i) * displacement_y)*reward_coefficient;
+    //std::cout << "active_force_x is " << active_force_x << std::endl;
+    //std::cout << "active_force_y is " << active_force_y << std::endl;
+    //std::cout << "displacement_x is " << displacement_x << std::endl;
+    //std::cout << "displacement_y is " << displacement_y << std::endl;
+    //std::cout << "theta is " << this->theta.at(rod_i) << std::endl;
+
+    //return (active_force_x * displacement_x + active_force_y * displacement_y) * reward_coefficient;
+
+    double total_angle_difference = 0.0;
+    int xg_size = static_cast<int>(xg.size());
+    int count = 0;
+
+    for (int rod_j = 0; rod_j < xg_size; rod_j++) {
+        if (rod_j == rod_i) continue; // Skip the same rod
+
+        double distance = sqrt(pow(xg[rod_i] - xg[rod_j], 2) + pow(yg[rod_i] - yg[rod_j], 2));
+
+        if (distance <= 5) {
+            total_angle_difference += AngleDifference(rod_i, rod_j);
+            count++;
+        }
+    }
+
+    // Handle the case where no neighboring rods are found within the range
+    if (count == 0) return 1.0;
+
+    // Calculate the normalized average angle difference
+    double normalized_average_angle_difference = abs(total_angle_difference / count) / M_PI;
+
+    // Invert the result to make smaller differences better, cap at 1
+    return 1.0 - std::min(normalized_average_angle_difference, 1.0);
 }
 
 // Calculate active work done by an individual rod
 double Rods::getActiveWorkByRodWithinRange(size_t rod_i, double timeStep, double range_n) 
 {
-    double avg_active_work = 0.0;
+    double total_active_work = 0.0;
     int count = 0;
 
     for (size_t rod_j = 0; rod_j < xg.size(); rod_j++) {
@@ -451,7 +494,7 @@ double Rods::getActiveWorkByRodWithinRange(size_t rod_i, double timeStep, double
         double distance = sqrt(pow(xg[rod_i] - xg[rod_j], 2) + pow(yg[rod_i] - yg[rod_j], 2));
 
         if (distance <= range_n) {
-            avg_active_work += getActiveWorkByRod(rod_j, timeStep);
+            total_active_work += getActiveWorkByRod(rod_j, timeStep);
             count++;
         }
     }
@@ -460,7 +503,7 @@ double Rods::getActiveWorkByRodWithinRange(size_t rod_i, double timeStep, double
     // Probably will not enter such case
     // if (count == 0) return 0.0;
 
-    return avg_active_work / count;
+    return total_active_work / count;
 }
 
 // Calculate active work done by an individual rod within range
@@ -533,6 +576,7 @@ bool Rods::isIntersecting(double ray_x1, double ray_y1, double ray_x2, double ra
 }
 
 // Get the 1D vision array of a rod
+// TODO consider periodic behavior
 std::vector<double> Rods::get1DVisionArray(int rod_i, double r_v, int ray_count) {
     std::vector<double> vision_array(ray_count, 0.0);
 
